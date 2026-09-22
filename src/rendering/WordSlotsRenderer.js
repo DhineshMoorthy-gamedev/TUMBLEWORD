@@ -1,0 +1,30 @@
+export class WordSlotsRenderer {
+  /**
+   * @param {HTMLElement} wordEl
+   */
+  constructor(wordEl) {
+    this.wordEl = wordEl;
+  }
+
+  /**
+   * Render target word letter slots
+   * @param {string} word
+   * @param {boolean} isWon
+   */
+  renderSlots(word, isWon = false) {
+    this.wordEl.innerHTML = '';
+    [...word].forEach(ch => {
+      const s = document.createElement('div');
+      s.className = `slot${isWon ? ' won' : ''}`;
+      s.textContent = ch;
+      this.wordEl.appendChild(s);
+    });
+  }
+
+  /**
+   * Flash all word slots as won
+   */
+  markWon() {
+    this.wordEl.querySelectorAll('.slot').forEach(s => s.classList.add('won'));
+  }
+}

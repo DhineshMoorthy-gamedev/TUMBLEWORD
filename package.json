@@ -1,0 +1,27 @@
+{
+  "name": "tumbleword",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:web": "vite --mode web",
+    "dev:itch": "vite --mode itch",
+    "dev:editor": "vite --mode editor",
+    "dev:playstore": "vite --mode playstore",
+    "build": "vite build",
+    "build:web": "vite build --mode web",
+    "build:itch": "vite build --mode itch",
+    "build:editor": "vite build --mode editor",
+    "build:playstore": "vite build --mode playstore",
+    "build:all": "npm run build:web && npm run build:itch && npm run build:editor && npm run build:playstore",
+    "preview": "vite preview",
+    "preview:web": "vite preview --mode web",
+    "preview:itch": "vite preview --mode itch",
+    "preview:editor": "vite preview --mode editor",
+    "preview:playstore": "vite preview --mode playstore"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

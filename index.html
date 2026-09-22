@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0F161C">
+  <meta name="description" content="Tumbleword - A rotating gravity word puzzle game.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Tumbleword</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700;800&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div class="header-left">
+        <h1>Tumbleword</h1>
+        <span class="levelno" id="streakBadge">Streak <b id="streakVal">0</b></span>
+      </div>
+      <div class="header-actions">
+        <button class="header-icon-btn" id="soundToggleBtn" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
+        <button class="header-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <div class="mode-toggle-bar">
+      <button class="mode-btn active" id="playModeBtn" type="button">🎮 Play Mode</button>
+      <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Editor / Solver</button>
+    </div>
+
+    <div class="word" id="word" aria-label="Target word"></div>
+    <div class="stats">
+      <span>Streak <b id="streak">0</b></span>
+      <span>Best <b id="bestStreak">0</b></span>
+      <span>Moves <b id="moves">0</b></span>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="board" id="board">
+        <div class="grid" id="grid"></div>
+        <div class="cards" id="cards"></div>
+      </div>
+    </div>
+
+    <p class="status" id="status" aria-live="polite"></p>
+
+    <div class="row" id="turnrow">
+      <button class="turn" id="left" type="button" aria-label="Turn maze left">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v5h5"/><path d="M3.5 9A9 9 0 1 1 5 17"/></svg>Turn left
+      </button>
+      <button class="turn" id="right" type="button" aria-label="Turn maze right">
+        Turn right<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4v5h-5"/><path d="M20.5 9A9 9 0 1 0 19 17"/></svg>
+      </button>
+    </div>
+
+    <div class="solver-box" id="solverBox">
+      <div class="solver-header">
+        <span>Pre-Solved Solution Timeline</span>
+        <span>Move: <b id="tlMoves">0</b> / <b id="tlTotalMoves">63</b></span>
+      </div>
+      <div class="slider-wrapper">
+        <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="63" value="0" aria-label="Solution scrubber slider">
+        <div class="slider-labels">
+          <span id="tlWordInfo">Word 1/12: CAT</span>
+          <span id="tlStepInfo">Move 0 / 63</span>
+        </div>
+      </div>
+      <div class="solver-controls">
+        <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start (Move 0)">⏮</button>
+        <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
+        <button class="solver-btn auto" id="solvePlay" type="button">▶ Play Solution</button>
+        <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
+        <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish (Move 63)">⏭</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="ghost" id="undo" type="button">Undo</button>
+      <button class="ghost" id="restart" type="button">Restart Run</button>
+    </div>
+
+    <div class="desktop-legend" id="desktopLegend">
+      <span><b>[← / → / A / D]</b> Turn</span>
+      <span><b>[Z]</b> Undo</span>
+      <span><b>[R]</b> Restart</span>
+      <span><b>[M]</b> Mute</span>
+      <span><b>[F]</b> Fullscreen</span>
+    </div>
+  </main>
+
+  <div class="victory-overlay" id="victoryOverlay" hidden>
+    <div class="victory-card">
+      <div class="victory-icon">🏆</div>
+      <h2>All 12 Words Spelled!</h2>
+      <p class="victory-sub">You conquered the full Tumbleword gauntlet!</p>
+      <div class="victory-stats">
+        <div class="stat-box"><span>Streak</span><b>12 / 12</b></div>
+        <div class="stat-box"><span>Total Moves</span><b id="victoryMoves">0</b></div>
+        <div class="stat-box"><span>Best Streak</span><b id="victoryBest">0</b></div>
+      </div>
+      <button class="turn next" id="playAgainBtn" type="button">Play Again</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

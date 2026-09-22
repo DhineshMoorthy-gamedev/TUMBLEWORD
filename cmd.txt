@@ -1,0 +1,8 @@
+web - npm run dev:web , npm run preview:web , npm run build:web
+desktop - npm run dev:itch , npm run preview:itch , npm run build:itch
+editor - npm run dev:editor , npm run preview:editor , npm run build:editor
+playstore - npm run dev:playstore , npm run preview:playstore , npm run build:playstore
+default - npm run dev
+
+
+
