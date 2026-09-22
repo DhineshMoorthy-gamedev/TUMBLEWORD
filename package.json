@@ -1,7 +1,7 @@
 {
   "name": "tumbleword",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,15 +13,27 @@
     "build:web": "vite build --mode web",
     "build:itch": "vite build --mode itch",
     "build:editor": "vite build --mode editor",
-    "build:playstore": "vite build --mode playstore",
+    "build:playstore": "vite build --mode playstore && cap sync android",
     "build:all": "npm run build:web && npm run build:itch && npm run build:editor && npm run build:playstore",
+    "build:apk": "npm run build:playstore && cd android && gradlew.bat assembleDebug",
+    "build:aab": "npm run build:playstore && cd android && gradlew.bat bundleRelease",
     "preview": "vite preview",
     "preview:web": "vite preview --mode web",
     "preview:itch": "vite preview --mode itch",
     "preview:editor": "vite preview --mode editor",
-    "preview:playstore": "vite preview --mode playstore"
+    "preview:playstore": "vite preview --mode playstore",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
   }
 }

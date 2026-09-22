@@ -60,10 +60,9 @@ export class GameEngine {
     this.boardRenderer.rebuildCardDOM(this.state.cards, isInitial);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 
-    if (!isInitial) {
-      void this.boardRenderer.cardsEl.offsetWidth;
-      this.boardRenderer.enableCardTransitions();
-    }
+    // Force reflow to commit initial placement without transition, then re-enable smooth sliding transitions
+    void this.boardRenderer.cardsEl.offsetWidth;
+    this.boardRenderer.enableCardTransitions();
 
     this.uiManager.updateStats(this.state);
     if (isInitial) {

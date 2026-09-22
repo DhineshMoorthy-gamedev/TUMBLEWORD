@@ -1,19 +1,20 @@
 # Cross-Platform Implementation & Platform Readiness Report
-**Project:** Tumbleword (`com.tumbleword.game`)  
+**Project:** Tumbleword (`com.olaidigitalstudios.tumbleword`)  
 **Scope:** Architecture Modernization, Multi-Target Build Pipeline Verification, Audio Synthesis & Platform Readiness  
+**Version:** `0.0.1`  
 **Date:** September 2026  
 
 ---
 
 ## Executive Summary & Completion Dashboard
 
-Tumbleword has been transformed from a single monolithic HTML file into a high-performance, modular ES-module architecture powered by **Vite**. The codebase unifies four distinct deployment targets via environment flags (`__APP_TARGET__` / `VITE_APP_TARGET`): **Android (Google Play Store)**, **Web (PWA / Browser)**, **Desktop / Itch.io (HTML5)**, and **Editor (Dev & Solver Suite)**.
+Tumbleword has been transformed from a single monolithic HTML file into a high-performance, modular ES-module architecture powered by **Vite** and **Capacitor v8**. The codebase unifies four distinct deployment targets via environment flags (`__APP_TARGET__` / `VITE_APP_TARGET`): **Android (Google Play Store)**, **Web (PWA / Browser)**, **Desktop / Itch.io (HTML5)**, and **Editor (Dev & Solver Suite)**.
 
 The core rotational gravity physics, 12-level gauntlet sequence, compound obstacle bonding mechanics, zero-dependency Web Audio procedural synthesizer, and exact 63-move pre-solved timeline scrubber are complete and verified.
 
 ```mermaid
 pie title Platform Implementation Completion
-    "Android (Play Store) [88%]" : 88
+    "Android (Play Store) [92%]" : 92
     "Web / PWA [98%]" : 98
     "Itch.io (Desktop) [95%]" : 95
     "Editor / Solver Suite [100%]" : 100
@@ -24,7 +25,7 @@ pie title Platform Implementation Completion
 
 | Platform Target | Build Target | Output Dir | Completion | Status | Key Features & Implementation Status |
 |---|---|---|:---:|:---:|---|
-| **Android (Play Store)** | `npm run build:playstore` | `dist/playstore` | **88%** | Production Ready Web Build | Capacitor v8 config, 4-tier back button hierarchy, dark status bar, native/web haptics |
+| **Android (Play Store)** | `npm run build:playstore` | `dist/playstore` + `android/` | **92%** | Working Native Android Project | Capacitor v8 workspace initialized, 4-tier back button, dark status bar, haptics synced |
 | **Web / PWA** | `npm run build:web` | `dist/web` | **98%** | Production Ready | PWA `sw.js` cache, web manifest, `_headers` cache rules, visibility lifecycle |
 | **Itch.io (Desktop)** | `npm run build:itch` | `dist/itch` | **95%** | Production Ready | Full keyboard router (`←`/`→`/`WASD`/`Z`/`R`/`M`/`F`), desktop key legend, Fullscreen API |
 | **Editor / Solver Suite**| `npm run build:editor` | `dist/editor` | **100%** | Production Ready | Pre-solved timeline scrubber (Moves 0–63), live BFS solver, step controls, auto-open editor |
@@ -32,33 +33,35 @@ pie title Platform Implementation Completion
 
 ---
 
-## 1. Platform Analysis: Android (Google Play Store) — 88% Complete
+## 1. Platform Analysis: Android (Google Play Store) — 92% Complete
 
-### Current Status: Production Ready Web Build (`dist/playstore/`)
-- **Build Command:** `npm run build:playstore`
-- **Output:** `dist/playstore/` (JS bundle: 29.53 KB, CSS: 10.84 kB)
-- **Engine / Wrapper Target:** Capacitor v8 (`com.tumbleword.game`).
+### Current Status: Native Android Project Ready (`android/`)
+- **Build Command:** `npm run build:playstore` (Runs Vite build + Capacitor sync)
+- **APK Generation:** `npm run build:apk`
+- **AAB Bundle Generation:** `npm run build:aab`
+- **Package Name:** `com.olaidigitalstudios.tumbleword`
+- **Version:** `0.0.1` (versionCode 1)
+- **Engine / Wrapper:** Capacitor v8.5.1 on Android (`minSdkVersion 24`, `targetSdkVersion 36`).
 
-### What Is Implemented & Working (88%)
-1. **Zero-Dependency Native Plugin Bridge (`src/platform/nativeBridge.js`):**
-   - Direct integration with `window.Capacitor.Plugins` avoiding bundle overhead and external build failures.
-   - **Status Bar:** Automatically applies dark status bar with background `#0F161C` matching the obsidian game theme.
-   - **Tactile Haptics:** Calls native `@capacitor/haptics` on board rotations (Light impact), compound bonding (Medium impact), obstacle expirations, and gauntlet victory (Success notification).
-   - **Web Fallback:** Gracefully falls back to `navigator.vibrate([25, 40, 35])` on mobile web browsers.
+### What Is Implemented & Working (92%)
+1. **Native Capacitor Plugins Configured & Synced:**
+   - `@capacitor/app@8.1.1`: Handles native lifecycle events and app minimization.
+   - `@capacitor/haptics@8.0.2`: Triggers tactile haptic feedback on turns (Light), bonds (Medium), and victory (Success).
+   - `@capacitor/status-bar@8.0.3`: Sets dark status bar style with background `#0F161C`.
 2. **4-Tier Hardware Back Button Hierarchy:**
    - Managed in `src/platform/nativeBridge.js` and wired to `src/main.js`:
      1. **Tier 1:** Dismisses the Victory Overlay modal and restarts the gauntlet.
      2. **Tier 2:** Pauses the automated timeline playback if currently playing.
      3. **Tier 3:** Returns from Editor / Solver mode back to Play mode.
      4. **Tier 4:** Minimizes the native Android app (`App.minimizeApp()`).
-3. **Target Feature Adaptation:**
-   - Hides desktop-specific UI elements (keyboard legend and fullscreen toggle button) when compiling for mobile.
+3. **Target Feature Adaptation & Orientation Lock:**
+   - `AndroidManifest.xml` locked to `android:screenOrientation="sensorPortrait"` and `android:hardwareAccelerated="true"`.
+   - Hides desktop-specific UI elements (keyboard legend, fullscreen toggle, and dev solver).
    - Preserves safe-area insets (`viewport-fit=cover`) for notched displays.
 
-### Remaining Steps for Play Store Submission (12%)
-1. Run `npx cap add android` to generate the Android Studio project workspace.
-2. Generate adaptive Android app launcher icons (`res/mipmap-*`) and splash screens.
-3. Configure release keystore signing in `android/app/build.gradle`.
+### Remaining Steps for Play Store Submission (8%)
+1. Generate adaptive Android app launcher icons (`res/mipmap-*`) and splash screen graphics.
+2. Configure release signing keystore in `android/app/build.gradle`.
 
 ---
 
