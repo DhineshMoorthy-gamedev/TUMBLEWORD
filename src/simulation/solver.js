@@ -1,4 +1,4 @@
-import { BOARD_N, BOARD_WALLS, MAX_BFS_DEPTH } from '../config/constants.js';
+import { MAX_BFS_DEPTH } from '../config/constants.js';
 import { mod } from '../utils/math.js';
 import { settle } from './physics.js';
 import { tryMerge } from './bonding.js';
@@ -20,13 +20,17 @@ export function getStateKey(state) {
 /**
  * Simulate 1 turn in a given direction
  * @param {string} word
- * @param {{r: number, cards: Array<object>}} state
+ * @param {{r: number, cards: Array<object>, n?: number, walls?: Array<string>}} state
  * @param {number} dir - Turn direction (-1: left, 1: right)
+ * @param {number} [n]
+ * @param {Array<string>} [walls]
  * @returns {{r: number, cards: Array<object>, won: boolean}}
  */
-export function simulateTurn(word, state, dir) {
+export function simulateTurn(word, state, dir, n = 5, walls = null) {
+  const boardN = state.n || n || 5;
+  const boardWalls = state.walls || walls || [];
   const nr = mod(state.r + dir, 4);
-  const settled = settle(BOARD_N, BOARD_WALLS, state.cards, mod(2 - nr, 4));
+  const settled = settle(boardN, boardWalls, state.cards, mod(2 - nr, 4));
 
   if (findWin(word, settled)) {
     return { r: nr, cards: settled, won: true };
@@ -43,17 +47,24 @@ export function simulateTurn(word, state, dir) {
 /**
  * Breadth-First Search solver for the current word and obstacle board
  * @param {string} word
- * @param {{r: number, cards: Array<object>}} initialState
- * @param {number} maxDepth
+ * @param {{r: number, cards: Array<object>, n?: number, walls?: Array<string>}} initialState
+ * @param {number} [maxDepth]
+ * @param {number} [n]
+ * @param {Array<string>} [walls]
  * @returns {Array<number>|null} Array of turn directions (-1 or 1), or null
  */
-export function solveBFS(word, initialState, maxDepth = MAX_BFS_DEPTH) {
+export function solveBFS(word, initialState, maxDepth = MAX_BFS_DEPTH, n = 5, walls = null) {
   if (!word || !initialState || !initialState.cards) return [];
   if (findWin(word, initialState.cards)) return [];
 
+  const boardN = initialState.n || n || 5;
+  const boardWalls = initialState.walls || walls || [];
+
   const startState = {
     r: initialState.r,
-    cards: initialState.cards.map(c => ({ ...c }))
+    cards: initialState.cards.map(c => ({ ...c })),
+    n: boardN,
+    walls: boardWalls
   };
   const queue = [{ state: startState, path: [] }];
   const visited = new Set([getStateKey(startState)]);
@@ -63,7 +74,7 @@ export function solveBFS(word, initialState, maxDepth = MAX_BFS_DEPTH) {
     if (path.length >= maxDepth) continue;
 
     for (const dir of [-1, 1]) {
-      const nextState = simulateTurn(word, state, dir);
+      const nextState = simulateTurn(word, state, dir, boardN, boardWalls);
       const nextPath = [...path, dir];
 
       if (nextState.won) {
@@ -73,7 +84,15 @@ export function solveBFS(word, initialState, maxDepth = MAX_BFS_DEPTH) {
       const key = getStateKey(nextState);
       if (!visited.has(key)) {
         visited.add(key);
-        queue.push({ state: nextState, path: nextPath });
+        queue.push({
+          state: {
+            r: nextState.r,
+            cards: nextState.cards,
+            n: boardN,
+            walls: boardWalls
+          },
+          path: nextPath
+        });
       }
     }
   }

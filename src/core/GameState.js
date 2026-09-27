@@ -1,10 +1,12 @@
-import { BOARD_N, BOARD_WALLS } from '../config/constants.js';
+import { CAMPAIGN_LEVELS } from '../levels/campaignLevels.js';
 import { loadBestStreak, saveBestStreak } from '../utils/storage.js';
 
 export class GameState {
   constructor() {
-    this.n = BOARD_N;
-    this.walls = BOARD_WALLS;
+    this.currentLevelId = 1;
+    this.level = CAMPAIGN_LEVELS[0];
+    this.n = this.level.n;
+    this.walls = this.level.walls;
     this.r = 0;
     this.angle = 0;
     this.wordIdx = 0;
@@ -16,6 +18,16 @@ export class GameState {
     this.locked = false;
     this.runCompleted = false;
     this.mode = 'play'; // 'play' | 'editor'
+    this.screen = 'home'; // 'home' | 'game'
+  }
+
+  setLevel(levelId) {
+    const found = CAMPAIGN_LEVELS.find(l => l.id === levelId) || CAMPAIGN_LEVELS[0];
+    this.currentLevelId = found.id;
+    this.level = found;
+    this.n = found.n;
+    this.walls = found.walls;
+    this.reset(this.mode);
   }
 
   reset(mode = 'play') {

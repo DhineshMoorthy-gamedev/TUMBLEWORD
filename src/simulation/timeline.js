@@ -1,4 +1,3 @@
-import { BOARD_N, BOARD_WALLS } from '../config/constants.js';
 import { mod, deepClone } from '../utils/math.js';
 import { settle } from './physics.js';
 import { tryMerge } from './bonding.js';
@@ -7,11 +6,17 @@ import { solveBFS } from './solver.js';
 import { findSpawnPositions } from '../levels/spawnSystem.js';
 
 /**
- * Generate full pre-solved solution timeline matching moves 1-to-1 (Move 0 to 63)
- * @param {Array<object>} levels
+ * Generate full pre-solved solution timeline matching moves 1-to-1 for any level
+ * @param {object|Array<object>} levelOrWords
  * @returns {{timeline: Array<object>, totalMoves: number}}
  */
-export function generateMoveTimeline(levels) {
+export function generateMoveTimeline(levelOrWords) {
+  const words = Array.isArray(levelOrWords)
+    ? levelOrWords
+    : (levelOrWords.words || []);
+  const boardN = levelOrWords.n || (words[0] && words[0].n) || 5;
+  const boardWalls = levelOrWords.walls || (words[0] && words[0].walls) || [];
+
   let nextCardIdSim = 1;
   let simCards = [];
   let simR = 0;
@@ -19,9 +24,13 @@ export function generateMoveTimeline(levels) {
   let simMoves = 0;
   const timeline = [];
 
+  if (!words || words.length === 0) {
+    return { timeline: [], totalMoves: 0 };
+  }
+
   function spawnWord(wordIdx) {
-    const lv = levels[wordIdx];
-    const positions = findSpawnPositions(lv, lv.word.length, simCards);
+    const lv = words[wordIdx];
+    const positions = findSpawnPositions(lv, lv.word.length, simCards, boardN, boardWalls);
     const newLetters = [...lv.word].map((ch, idx) => ({
       id: nextCardIdSim++,
       ch,
@@ -36,23 +45,29 @@ export function generateMoveTimeline(levels) {
     simCards.push(...newLetters);
   }
 
-  // Initial spawn of word 0 (CAT)
+  // Initial spawn of word 0
   spawnWord(0);
 
   timeline.push({
     move: 0,
     wordIdx: 0,
-    word: levels[0].word,
+    word: words[0].word,
     r: simR,
     angle: simAngle,
     streak: 0,
     cards: deepClone(simCards),
-    desc: `Starting Run: Spell <strong>${levels[0].word}</strong> (Word 1/${levels.length})`
+    desc: `Starting Level: Spell <strong>${words[0].word}</strong> (Word 1/${words.length})`
   });
 
-  for (let levelIdx = 0; levelIdx < levels.length; levelIdx++) {
-    const lv = levels[levelIdx];
-    const sol = solveBFS(lv.word, { r: simR, cards: simCards });
+  for (let levelIdx = 0; levelIdx < words.length; levelIdx++) {
+    const lv = words[levelIdx];
+    const sol = solveBFS(
+      lv.word,
+      { r: simR, cards: simCards, n: boardN, walls: boardWalls },
+      30,
+      boardN,
+      boardWalls
+    );
 
     if (sol && sol.length > 0) {
       for (let stepInLevel = 0; stepInLevel < sol.length; stepInLevel++) {
@@ -61,7 +76,7 @@ export function generateMoveTimeline(levels) {
         simMoves++;
         simR = mod(simR + dir, 4);
         simAngle += 90 * dir;
-        simCards = settle(BOARD_N, BOARD_WALLS, simCards, mod(2 - simR, 4));
+        simCards = settle(boardN, boardWalls, simCards, mod(2 - simR, 4));
 
         const winIds = findWin(lv.word, simCards);
         if (!winIds) {
@@ -105,7 +120,7 @@ export function generateMoveTimeline(levels) {
             c => !removeIds.includes(c.id) && !expiredIds.includes(c.id)
           );
 
-          const isFinalLevel = levelIdx === levels.length - 1;
+          const isFinalLevel = levelIdx === words.length - 1;
 
           if (!isFinalLevel) {
             const nextWordIdx = levelIdx + 1;
@@ -113,12 +128,12 @@ export function generateMoveTimeline(levels) {
             timeline.push({
               move: simMoves,
               wordIdx: nextWordIdx,
-              word: levels[nextWordIdx].word,
+              word: words[nextWordIdx].word,
               r: simR,
               angle: simAngle,
               streak: levelIdx + 1,
               cards: deepClone(simCards),
-              desc: `Move ${simMoves}: ${dir === -1 ? 'Turn Left ◀' : 'Turn Right ▶'} ➔ Formed <strong>${lv.word}</strong>! [Streak: ${levelIdx + 1}/${levels.length}] (Next: ${levels[nextWordIdx].word})`
+              desc: `Move ${simMoves}: ${dir === -1 ? 'Turn Left ◀' : 'Turn Right ▶'} ➔ Formed <strong>${lv.word}</strong>! [Streak: ${levelIdx + 1}/${words.length}] (Next: ${words[nextWordIdx].word})`
             });
           } else {
             timeline.push({
@@ -127,9 +142,9 @@ export function generateMoveTimeline(levels) {
               word: lv.word,
               r: simR,
               angle: simAngle,
-              streak: levels.length,
+              streak: words.length,
               cards: deepClone(simCards),
-              desc: `Move ${simMoves}: ${dir === -1 ? 'Turn Left ◀' : 'Turn Right ▶'} ➔ Formed <strong>${lv.word}</strong>! 🎉 <strong>All ${levels.length} words completed!</strong>`,
+              desc: `Move ${simMoves}: ${dir === -1 ? 'Turn Left ◀' : 'Turn Right ▶'} ➔ Formed <strong>${lv.word}</strong>! 🎉 <strong>All ${words.length} words completed!</strong>`,
               isVictory: true
             });
           }

@@ -17,93 +17,127 @@
 </head>
 <body>
   <main>
-    <header>
-      <div class="header-left">
-        <h1>Tumbleword</h1>
-        <span class="levelno" id="streakBadge">Streak <b id="streakVal">0</b></span>
+    <!-- HOME SCREEN / LEVEL SELECTOR -->
+    <section class="home-screen" id="homeScreen">
+      <header class="home-header">
+        <div class="header-left">
+          <h1>Tumbleword</h1>
+          <span class="levelno">Campaign</span>
+        </div>
+        <div class="header-actions">
+          <button class="header-icon-btn" id="soundToggleBtnHome" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
+          <button class="header-icon-btn" id="fullscreenBtnHome" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+        </div>
+      </header>
+
+      <p class="home-sub">Select a Level • Completed words tumble as obstacles</p>
+
+      <div class="level-grid" id="levelGrid">
+        <!-- Dynamically rendered by UIManager -->
       </div>
-      <div class="header-actions">
-        <button class="header-icon-btn" id="soundToggleBtn" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
-        <button class="header-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+    </section>
+
+    <!-- GAMEPLAY SCREEN -->
+    <section class="game-screen" id="gameScreen" hidden>
+      <header>
+        <div class="header-left">
+          <button class="back-btn" id="backToLevelsBtn" type="button" title="Back to Levels">⬅ Levels</button>
+          <div class="level-info-header">
+            <h2 id="currentLevelName">Level 1: First Steps</h2>
+            <span class="level-meta-badge" id="currentLevelMeta">5×5 Grid • 3 Words</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="header-icon-btn" id="soundToggleBtn" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
+          <button class="header-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+        </div>
+      </header>
+
+      <div class="mode-toggle-bar">
+        <button class="mode-btn active" id="playModeBtn" type="button">🎮 Play Mode</button>
+        <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Editor / Solver</button>
       </div>
-    </header>
 
-    <div class="mode-toggle-bar">
-      <button class="mode-btn active" id="playModeBtn" type="button">🎮 Play Mode</button>
-      <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Editor / Solver</button>
-    </div>
-
-    <div class="word" id="word" aria-label="Target word"></div>
-    <div class="stats">
-      <span>Streak <b id="streak">0</b></span>
-      <span>Best <b id="bestStreak">0</b></span>
-      <span>Moves <b id="moves">0</b></span>
-    </div>
-
-    <div class="stage" id="stage">
-      <div class="board" id="board">
-        <div class="grid" id="grid"></div>
-        <div class="cards" id="cards"></div>
+      <div class="word" id="word" aria-label="Target word"></div>
+      <div class="stats">
+        <span>Word <b id="wordProgress">1 / 3</b></span>
+        <span>Streak <b id="streak">0</b></span>
+        <span>Best <b id="bestStreak">0</b></span>
+        <span>Moves <b id="moves">0</b></span>
       </div>
-    </div>
 
-    <p class="status" id="status" aria-live="polite"></p>
-
-    <div class="row" id="turnrow">
-      <button class="turn" id="left" type="button" aria-label="Turn maze left">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v5h5"/><path d="M3.5 9A9 9 0 1 1 5 17"/></svg>Turn left
-      </button>
-      <button class="turn" id="right" type="button" aria-label="Turn maze right">
-        Turn right<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4v5h-5"/><path d="M20.5 9A9 9 0 1 0 19 17"/></svg>
-      </button>
-    </div>
-
-    <div class="solver-box" id="solverBox">
-      <div class="solver-header">
-        <span>Pre-Solved Solution Timeline</span>
-        <span>Move: <b id="tlMoves">0</b> / <b id="tlTotalMoves">63</b></span>
-      </div>
-      <div class="slider-wrapper">
-        <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="63" value="0" aria-label="Solution scrubber slider">
-        <div class="slider-labels">
-          <span id="tlWordInfo">Word 1/12: CAT</span>
-          <span id="tlStepInfo">Move 0 / 63</span>
+      <div class="stage" id="stage">
+        <div class="board" id="board">
+          <div class="grid" id="grid"></div>
+          <div class="cards" id="cards"></div>
         </div>
       </div>
-      <div class="solver-controls">
-        <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start (Move 0)">⏮</button>
-        <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
-        <button class="solver-btn auto" id="solvePlay" type="button">▶ Play Solution</button>
-        <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
-        <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish (Move 63)">⏭</button>
+
+      <p class="status" id="status" aria-live="polite"></p>
+
+      <div class="row" id="turnrow">
+        <button class="turn" id="left" type="button" aria-label="Turn maze left">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v5h5"/><path d="M3.5 9A9 9 0 1 1 5 17"/></svg>Turn left
+        </button>
+        <button class="turn" id="right" type="button" aria-label="Turn maze right">
+          Turn right<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4v5h-5"/><path d="M20.5 9A9 9 0 1 0 19 17"/></svg>
+        </button>
       </div>
-    </div>
 
-    <div class="row">
-      <button class="ghost" id="undo" type="button">Undo</button>
-      <button class="ghost" id="restart" type="button">Restart Run</button>
-    </div>
+      <div class="solver-box" id="solverBox">
+        <div class="solver-header">
+          <span>Pre-Solved Solution Timeline</span>
+          <span>Move: <b id="tlMoves">0</b> / <b id="tlTotalMoves">0</b></span>
+        </div>
+        <div class="slider-wrapper">
+          <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="0" value="0" aria-label="Solution scrubber slider">
+          <div class="slider-labels">
+            <span id="tlWordInfo">Word 1: CAT</span>
+            <span id="tlStepInfo">Move 0 / 0</span>
+          </div>
+        </div>
+        <div class="solver-controls">
+          <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start">⏮</button>
+          <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
+          <button class="solver-btn auto" id="solvePlay" type="button">▶ Play Solution</button>
+          <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
+          <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish">⏭</button>
+        </div>
+      </div>
 
-    <div class="desktop-legend" id="desktopLegend">
-      <span><b>[← / → / A / D]</b> Turn</span>
-      <span><b>[Z]</b> Undo</span>
-      <span><b>[R]</b> Restart</span>
-      <span><b>[M]</b> Mute</span>
-      <span><b>[F]</b> Fullscreen</span>
-    </div>
+      <div class="row">
+        <button class="ghost" id="undo" type="button">Undo</button>
+        <button class="ghost" id="restart" type="button">Restart Level</button>
+      </div>
+
+      <div class="desktop-legend" id="desktopLegend">
+        <span><b>[← / → / A / D]</b> Turn</span>
+        <span><b>[Z]</b> Undo</span>
+        <span><b>[R]</b> Restart</span>
+        <span><b>[M]</b> Mute</span>
+        <span><b>[F]</b> Fullscreen</span>
+      </div>
+    </section>
   </main>
 
+  <!-- LEVEL VICTORY OVERLAY -->
   <div class="victory-overlay" id="victoryOverlay" hidden>
     <div class="victory-card">
       <div class="victory-icon">🏆</div>
-      <h2>All 12 Words Spelled!</h2>
-      <p class="victory-sub">You conquered the full Tumbleword gauntlet!</p>
+      <h2 id="victoryTitle">Level Completed!</h2>
+      <p class="victory-sub" id="victorySubtitle">All words spelled successfully!</p>
       <div class="victory-stats">
-        <div class="stat-box"><span>Streak</span><b>12 / 12</b></div>
+        <div class="stat-box"><span>Difficulty</span><b id="victoryScore">Score: 120</b></div>
         <div class="stat-box"><span>Total Moves</span><b id="victoryMoves">0</b></div>
         <div class="stat-box"><span>Best Streak</span><b id="victoryBest">0</b></div>
       </div>
-      <button class="turn next" id="playAgainBtn" type="button">Play Again</button>
+      <div class="victory-actions">
+        <button class="turn next" id="nextLevelBtn" type="button">Next Level ➔</button>
+        <div class="row">
+          <button class="ghost" id="replayLevelBtn" type="button">Replay Level ↺</button>
+          <button class="ghost" id="victoryHomeBtn" type="button">Level Select ⌂</button>
+        </div>
+      </div>
     </div>
   </div>
 

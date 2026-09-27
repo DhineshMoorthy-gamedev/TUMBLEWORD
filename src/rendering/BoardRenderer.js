@@ -1,4 +1,3 @@
-import { BOARD_N, BOARD_WALLS } from '../config/constants.js';
 import { isCompleted } from '../simulation/winCondition.js';
 
 export class BoardRenderer {
@@ -12,20 +11,31 @@ export class BoardRenderer {
     this.gridEl = gridEl;
     this.cardsEl = cardsEl;
     this.cardEls = new Map();
+    this.n = 5;
+    this.walls = [];
   }
 
-  initGrid() {
-    this.boardEl.style.setProperty('--n', BOARD_N);
+  /**
+   * Initialize grid DOM with dynamic dimension N and wall layout
+   * @param {number} [n]
+   * @param {Array<string>} [walls]
+   */
+  initGrid(n = 5, walls = []) {
+    this.n = n;
+    this.walls = walls && walls.length ? walls : Array(n).fill('.'.repeat(n));
+
+    this.boardEl.style.setProperty('--n', this.n);
     this.boardEl.style.transition = 'none';
     this.boardEl.style.transform = 'rotate(0deg)';
     void this.boardEl.offsetWidth;
     this.boardEl.style.transition = '';
 
     this.gridEl.innerHTML = '';
-    for (let y = 0; y < BOARD_N; y++) {
-      for (let x = 0; x < BOARD_N; x++) {
+    for (let y = 0; y < this.n; y++) {
+      for (let x = 0; x < this.n; x++) {
+        const isWall = this.walls[y] && this.walls[y][x] === '#';
         const d = document.createElement('div');
-        d.className = `cell${BOARD_WALLS[y][x] === '#' ? '' : ' floor'}`;
+        d.className = `cell${isWall ? '' : ' floor'}`;
         this.gridEl.appendChild(d);
       }
     }
@@ -104,8 +114,8 @@ export class BoardRenderer {
       const el = this.cardEls.get(c.id);
       if (!el) return;
 
-      el.style.left = `${(c.x * 100) / BOARD_N}%`;
-      el.style.top = `${(c.y * 100) / BOARD_N}%`;
+      el.style.left = `${(c.x * 100) / this.n}%`;
+      el.style.top = `${(c.y * 100) / this.n}%`;
 
       const face = el.firstChild;
       if (face) {
@@ -126,8 +136,8 @@ export class BoardRenderer {
     const el = this.cardEls.get(absorbedId);
     if (!el) return;
     el.style.transition = `left ${durationMs}ms ease-in,top ${durationMs}ms ease-in,opacity ${durationMs}ms linear`;
-    el.style.left = `${(toX * 100) / BOARD_N}%`;
-    el.style.top = `${(toY * 100) / BOARD_N}%`;
+    el.style.left = `${(toX * 100) / this.n}%`;
+    el.style.top = `${(toY * 100) / this.n}%`;
     el.style.opacity = '0';
   }
 

@@ -43,7 +43,7 @@ export class NativeBridge {
   }
 
   /**
-   * 4-Tier Hardware Back Button hierarchy
+   * 5-Tier Hardware Back Button hierarchy
    */
   async handleHardwareBack() {
     // Tier 1: Close Victory Modal if visible
@@ -58,13 +58,19 @@ export class NativeBridge {
       return;
     }
 
-    // Tier 3: Exit Editor Mode back to Play Mode
+    // Tier 3: Return from Active Game back to Home Screen
+    if (this.actions.isGameScreen && this.actions.isGameScreen()) {
+      this.actions.goToHome();
+      return;
+    }
+
+    // Tier 4: Exit Editor Mode back to Play Mode
     if (this.actions.isEditorMode && this.actions.isEditorMode()) {
       this.actions.setPlayMode();
       return;
     }
 
-    // Tier 4: Minimize Native Android App
+    // Tier 5: Minimize Native Android App
     if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
       try {
         const App = window.Capacitor.Plugins?.App;

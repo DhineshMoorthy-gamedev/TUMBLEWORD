@@ -1,16 +1,12 @@
 import {
-  BOARD_N,
-  BOARD_WALLS,
   LOCK_MS,
-  MERGE_MS,
-  REDUCE_MOTION
+  MERGE_MS
 } from '../config/constants.js';
 import { mod } from '../utils/math.js';
 import { settle } from '../simulation/physics.js';
 import { tryMerge } from '../simulation/bonding.js';
 import { findWin, isCompleted } from '../simulation/winCondition.js';
 import { createWordCards } from '../levels/spawnSystem.js';
-import { LEVELS } from '../levels/levelData.js';
 
 export class GameEngine {
   /**
@@ -32,31 +28,44 @@ export class GameEngine {
   }
 
   /**
-   * Start a new interactive game run
+   * Start a specific campaign level
+   * @param {number} levelId
    */
-  startInteractiveRun() {
-    this.state.reset('play');
+  startLevel(levelId) {
+    this.state.setLevel(levelId);
     this.nextCardId = 1;
     this.uiManager.hideVictory();
-    this.boardRenderer.initGrid();
+    this.boardRenderer.initGrid(this.state.n, this.state.walls);
     this.spawnCurrentWord(true);
   }
 
   /**
-   * Spawn letters for the current word level
+   * Restart the current active level
+   */
+  startInteractiveRun() {
+    this.startLevel(this.state.currentLevelId);
+  }
+
+  /**
+   * Spawn letters for the current word in the active level
    * @param {boolean} isInitial
    */
   spawnCurrentWord(isInitial = false) {
-    const lv = LEVELS[this.state.wordIdx];
+    const words = this.state.level.words;
+    const currentWordData = words[this.state.wordIdx];
+    if (!currentWordData) return;
+
     const newLetters = createWordCards(
-      lv,
+      currentWordData,
       this.state.cards,
       () => this.nextCardId++,
-      isInitial
+      isInitial,
+      this.state.n,
+      this.state.walls
     );
 
     this.state.cards.push(...newLetters);
-    this.slotsRenderer.renderSlots(lv.word);
+    this.slotsRenderer.renderSlots(currentWordData.word);
     this.boardRenderer.rebuildCardDOM(this.state.cards, isInitial);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 
@@ -67,11 +76,11 @@ export class GameEngine {
     this.uiManager.updateStats(this.state);
     if (isInitial) {
       this.uiManager.setStatus(
-        `Spell <strong>${lv.word}</strong>. Completed words stay on board and tumble as obstacles!`
+        `Spell <strong>${currentWordData.word}</strong>. Completed words stay on the board as obstacles!`
       );
     } else {
       this.uiManager.setStatus(
-        `Now spell <strong>${lv.word}</strong>! Completed words remain on the board.`
+        `Now spell <strong>${currentWordData.word}</strong>! (${this.state.wordIdx + 1}/${words.length})`
       );
     }
   }
@@ -93,8 +102,8 @@ export class GameEngine {
     this.state.moves++;
 
     this.state.cards = settle(
-      BOARD_N,
-      BOARD_WALLS,
+      this.state.n,
+      this.state.walls,
       this.state.cards,
       mod(2 - nr, 4)
     );
@@ -110,7 +119,7 @@ export class GameEngine {
    * Post-settle resolution: check win, then apply letter bonding
    */
   afterSettle() {
-    const curWord = LEVELS[this.state.wordIdx].word;
+    const curWord = this.state.level.words[this.state.wordIdx].word;
 
     // 1. Spatial win check
     const winIds = findWin(curWord, this.state.cards);
@@ -139,59 +148,38 @@ export class GameEngine {
     if (this.sound) this.sound.playBond();
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('medium');
 
-    if (REDUCE_MOTION) {
-      merges.forEach(m => {
-        this.boardRenderer.removeCard(m.absorbedId);
-      });
-      this.state.cards = newCards;
-      this.boardRenderer.render(this.state.cards, this.state.angle);
-      const winIds = findWin(LEVELS[this.state.wordIdx].word, this.state.cards);
-      if (winIds) this.completeWord(winIds);
-      else {
-        this.state.locked = false;
-        this.uiManager.updateStats(this.state);
-      }
-      return;
-    }
-
+    const duration = MERGE_MS;
     merges.forEach(m => {
-      this.boardRenderer.animateCardMerge(
-        m.absorbedId,
-        m.toX,
-        m.toY,
-        MERGE_MS
-      );
+      this.boardRenderer.animateCardMerge(m.fromId, m.toX, m.toY, duration);
     });
 
     setTimeout(() => {
-      merges.forEach(m => {
-        this.boardRenderer.removeCard(m.absorbedId);
-        this.boardRenderer.triggerBondingPulse(m.survivorId);
-      });
-
       this.state.cards = newCards;
+      this.boardRenderer.rebuildCardDOM(this.state.cards);
       this.boardRenderer.render(this.state.cards, this.state.angle);
 
-      const winIds = findWin(LEVELS[this.state.wordIdx].word, this.state.cards);
-      if (winIds) this.completeWord(winIds);
-      else {
+      const curWord = this.state.level.words[this.state.wordIdx].word;
+      const winIds = findWin(curWord, this.state.cards);
+      if (winIds) {
+        this.completeWord(winIds);
+      } else {
         this.state.locked = false;
         this.uiManager.updateStats(this.state);
       }
-    }, MERGE_MS + 30);
+    }, duration + 20);
   }
 
   /**
-   * Complete current target word
+   * Complete the current word in the level
    * @param {Array<number>} winIds
    */
   completeWord(winIds) {
-    this.state.locked = true;
-    const currentWord = LEVELS[this.state.wordIdx].word;
     this.slotsRenderer.markWon();
 
+    const currentWord = this.state.level.words[this.state.wordIdx].word;
     const winCards = this.state.cards.filter(c => winIds.includes(c.id));
-    const survivor = winCards[0];
+    const survivor = winCards[0] || this.state.cards[0];
+
     survivor.ch = currentWord;
     survivor.completed = true;
     survivor.isCompletedWord = true;
@@ -199,42 +187,24 @@ export class GameEngine {
     delete survivor.wi;
     delete survivor.we;
 
-    // Decrement lifespan of prior completed word obstacles
     const expiredIds = [];
     this.state.cards.forEach(c => {
-      if (
-        isCompleted(c) &&
-        c.id !== survivor.id &&
-        c.lifespan !== undefined
-      ) {
+      if (isCompleted(c) && c.id !== survivor.id && c.lifespan !== undefined) {
         c.lifespan--;
         if (c.lifespan <= 0) expiredIds.push(c.id);
       }
     });
 
+    const removeIds = winCards.slice(1).map(c => c.id);
+
+    expiredIds.forEach(id => {
+      this.boardRenderer.markDissolving(id);
+    });
+
+    const waitTime = expiredIds.length > 0 ? 460 : 0;
     if (expiredIds.length > 0 && this.sound) {
-      this.sound.playDissolve();
+      setTimeout(() => this.sound.playDissolve(), 100);
     }
-    expiredIds.forEach(id => this.boardRenderer.markDissolving(id));
-
-    const removeCards = winCards.slice(1);
-    const removeIds = removeCards.map(c => c.id);
-
-    if (removeIds.length > 0 && !REDUCE_MOTION) {
-      removeIds.forEach(id => {
-        this.boardRenderer.animateCardMerge(
-          id,
-          survivor.x,
-          survivor.y,
-          MERGE_MS
-        );
-      });
-    }
-
-    const waitTime =
-      (removeIds.length > 0 || expiredIds.length > 0) && !REDUCE_MOTION
-        ? MERGE_MS + 40
-        : 150;
 
     setTimeout(() => {
       removeIds.forEach(id => this.boardRenderer.removeCard(id));
@@ -250,13 +220,14 @@ export class GameEngine {
       this.state.incrementStreak();
       this.uiManager.updateStats(this.state);
 
-      if (this.state.wordIdx === LEVELS.length - 1) {
+      const words = this.state.level.words;
+      if (this.state.wordIdx === words.length - 1) {
         this.state.runCompleted = true;
         if (this.sound) this.sound.playVictory();
         if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
-        this.uiManager.showVictory(this.state.moves, this.state.bestStreak);
+        this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level);
         this.uiManager.setStatus(
-          `🎉 <strong>All 12 words completed!</strong> Run finished in ${this.state.moves} moves.`
+          `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves.`
         );
         this.uiManager.updateStats(this.state);
         return;
@@ -301,7 +272,8 @@ export class GameEngine {
     this.state.cards = h.cards.map(c => ({ ...c }));
     this.state.locked = true;
 
-    const lv = LEVELS[this.state.wordIdx];
+    const words = this.state.level.words;
+    const lv = words[this.state.wordIdx];
     this.slotsRenderer.renderSlots(lv.word);
     this.boardRenderer.rebuildCardDOM(this.state.cards, true);
     this.boardRenderer.render(this.state.cards, this.state.angle);
@@ -335,7 +307,8 @@ export class GameEngine {
     this.state.locked = false;
     this.state.runCompleted = !!snap.isVictory;
 
-    const lv = LEVELS[snap.wordIdx];
+    const words = this.state.level.words;
+    const lv = words[snap.wordIdx] || words[0];
     this.slotsRenderer.renderSlots(lv.word, snap.isVictory);
     this.boardRenderer.rebuildCardDOM(this.state.cards, !animate);
     this.boardRenderer.render(this.state.cards, this.state.angle);
@@ -351,7 +324,8 @@ export class GameEngine {
     if (snap.isVictory) {
       this.uiManager.showVictory(
         snap.move,
-        Math.max(this.state.bestStreak, LEVELS.length)
+        Math.max(this.state.bestStreak, words.length),
+        this.state.level
       );
     } else {
       this.uiManager.hideVictory();

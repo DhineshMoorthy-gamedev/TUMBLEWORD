@@ -714,3 +714,169 @@ nav.levels button[aria-current="true"] {
   color: var(--ink);
   font-weight: 600;
 }
+
+/* Home Screen / Level Selector Styles */
+.home-screen, .game-screen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-sub {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: -4px 0 4px;
+  text-align: center;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (max-width: 380px) {
+  .level-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.level-card {
+  background: var(--wall);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  transition: transform 0.16s ease, border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  color: var(--ink);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.level-card:hover, .level-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--tile);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.level-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.level-badge {
+  font-family: var(--slab);
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--tile);
+  background: rgba(228, 175, 48, 0.14);
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(228, 175, 48, 0.35);
+}
+
+.grid-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--slot);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.level-card-title {
+  font-family: var(--slab);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 1px;
+}
+
+.level-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.level-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.level-card-score {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tile);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 3px 7px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.level-moves-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #73D13D;
+  background: rgba(115, 209, 61, 0.14);
+  border: 1px solid rgba(115, 209, 61, 0.35);
+  padding: 3px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.back-btn {
+  background: var(--slot);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--line);
+  border-color: var(--tile);
+}
+
+.level-info-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.level-info-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-family: var(--slab);
+  color: var(--ink);
+}
+
+.level-meta-badge {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.victory-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
