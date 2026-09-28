@@ -36,8 +36,6 @@ export function generateMoveTimeline(levelOrWords) {
       ch,
       x: positions[idx] ? positions[idx].x : 0,
       y: positions[idx] ? positions[idx].y : 0,
-      wi: idx,
-      we: idx,
       completed: false,
       isCompletedWord: false,
       isNew: false
@@ -76,12 +74,26 @@ export function generateMoveTimeline(levelOrWords) {
         simMoves++;
         simR = mod(simR + dir, 4);
         simAngle += 90 * dir;
-        simCards = settle(boardN, boardWalls, simCards, mod(2 - simR, 4));
+        const gravity = mod(2 - simR, 4);
+        simCards = settle(boardN, boardWalls, simCards, gravity);
 
-        const winIds = findWin(lv.word, simCards);
-        if (!winIds) {
-          const { newCards } = tryMerge(lv.word, simCards);
+        while (true) {
+          const winIds = findWin(lv.word, simCards);
+          if (winIds) break;
+
+          const { newCards, merges } = tryMerge(lv.word, simCards);
+          if (merges.length === 0) break;
+
           simCards = newCards;
+          if (findWin(lv.word, simCards)) break;
+
+          const cascaded = settle(boardN, boardWalls, simCards, gravity);
+          const didMove = cascaded.some(c => {
+            const prev = simCards.find(p => p.id === c.id);
+            return prev && (prev.x !== c.x || prev.y !== c.y);
+          });
+          simCards = cascaded;
+          if (!didMove) break;
         }
 
         if (!isLastMoveInLevel) {
@@ -104,8 +116,6 @@ export function generateMoveTimeline(levelOrWords) {
           survivor.completed = true;
           survivor.isCompletedWord = true;
           survivor.lifespan = lv.word.length;
-          delete survivor.wi;
-          delete survivor.we;
 
           const expiredIds = [];
           simCards.forEach(c => {

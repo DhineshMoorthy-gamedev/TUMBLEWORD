@@ -1,10 +1,22 @@
 import { CAMPAIGN_LEVELS } from '../levels/campaignLevels.js';
-import { loadBestStreak, saveBestStreak } from '../utils/storage.js';
+import {
+  loadBestStreak,
+  saveBestStreak,
+  loadCompletedLevels,
+  saveCompletedLevel,
+  loadUnlockedLevel,
+  saveUnlockedLevel,
+  loadTotalWordsSolved,
+  addTotalWordsSolved
+} from '../utils/storage.js';
 
 export class GameState {
   constructor() {
-    this.currentLevelId = 1;
-    this.level = CAMPAIGN_LEVELS[0];
+    this.completedLevels = loadCompletedLevels();
+    this.unlockedLevel = loadUnlockedLevel();
+    this.totalWords = loadTotalWordsSolved();
+    this.currentLevelId = this.unlockedLevel || 1;
+    this.level = CAMPAIGN_LEVELS.find(l => l.id === this.currentLevelId) || CAMPAIGN_LEVELS[0];
     this.n = this.level.n;
     this.walls = this.level.walls;
     this.r = 0;
@@ -21,12 +33,17 @@ export class GameState {
     this.screen = 'home'; // 'home' | 'game'
   }
 
-  setLevel(levelId) {
-    const found = CAMPAIGN_LEVELS.find(l => l.id === levelId) || CAMPAIGN_LEVELS[0];
-    this.currentLevelId = found.id;
-    this.level = found;
-    this.n = found.n;
-    this.walls = found.walls;
+  setLevel(levelOrId) {
+    if (typeof levelOrId === 'object' && levelOrId !== null) {
+      this.level = levelOrId;
+      this.currentLevelId = levelOrId.id;
+    } else {
+      const found = CAMPAIGN_LEVELS.find(l => l.id === levelOrId) || CAMPAIGN_LEVELS[0];
+      this.currentLevelId = found.id;
+      this.level = found;
+    }
+    this.n = this.level.n;
+    this.walls = this.level.walls;
     this.reset(this.mode);
   }
 
@@ -64,5 +81,25 @@ export class GameState {
       this.bestStreak = this.streak;
       saveBestStreak(this.bestStreak);
     }
+    this.totalWords = addTotalWordsSolved(1);
+  }
+
+  markLevelCompleted() {
+    if (typeof this.currentLevelId === 'number') {
+      saveCompletedLevel(this.currentLevelId);
+      if (!this.completedLevels.includes(this.currentLevelId)) {
+        this.completedLevels.push(this.currentLevelId);
+      }
+      const nextId = this.currentLevelId + 1;
+      if (nextId <= CAMPAIGN_LEVELS.length) {
+        saveUnlockedLevel(nextId);
+        this.unlockedLevel = Math.max(this.unlockedLevel, nextId);
+      }
+    }
+  }
+
+  isLevelCompleted(levelId) {
+    return this.completedLevels.includes(levelId);
   }
 }
+

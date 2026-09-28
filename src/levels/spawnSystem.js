@@ -61,8 +61,6 @@ export function createWordCards(level, existingCards, nextIdFn, isInitial = fals
     ch,
     x: positions[idx] ? positions[idx].x : 0,
     y: positions[idx] ? positions[idx].y : 0,
-    wi: idx,
-    we: idx,
     completed: false,
     isCompletedWord: false,
     isNew: !isInitial

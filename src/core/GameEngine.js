@@ -35,6 +35,8 @@ export class GameEngine {
     this.state.setLevel(levelId);
     this.nextCardId = 1;
     this.uiManager.hideVictory();
+    if (this.sound) this.sound.playLevelStart();
+    if (this.nativeBridge) this.nativeBridge.triggerHaptic('light');
     this.boardRenderer.initGrid(this.state.n, this.state.walls);
     this.spawnCurrentWord(true);
   }
@@ -66,10 +68,10 @@ export class GameEngine {
 
     this.state.cards.push(...newLetters);
     this.slotsRenderer.renderSlots(currentWordData.word);
-    this.boardRenderer.rebuildCardDOM(this.state.cards, isInitial);
+    this.boardRenderer.rebuildCardDOM(this.state.cards, isInitial, isInitial);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 
-    // Force reflow to commit initial placement without transition, then re-enable smooth sliding transitions
+    // Force reflow to commit initial placement, then re-enable smooth sliding transitions
     void this.boardRenderer.cardsEl.offsetWidth;
     this.boardRenderer.enableCardTransitions();
 
@@ -90,7 +92,14 @@ export class GameEngine {
    * @param {number} dir
    */
   turn(dir) {
-    if (this.state.locked || this.state.runCompleted) return;
+    if (this.state.runCompleted) return;
+
+    if (this.state.locked) {
+      this._queuedTurn = dir;
+      return;
+    }
+
+    this._queuedTurn = null;
 
     if (this.sound) this.sound.playTurn();
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('light');
@@ -134,6 +143,12 @@ export class GameEngine {
       this.state.cards = newCards;
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
+
+      if (this._queuedTurn !== null) {
+        const nextTurn = this._queuedTurn;
+        this._queuedTurn = null;
+        this.turn(nextTurn);
+      }
     } else {
       this.applyMergeAnimation(merges, newCards);
     }
@@ -150,7 +165,8 @@ export class GameEngine {
 
     const duration = MERGE_MS;
     merges.forEach(m => {
-      this.boardRenderer.animateCardMerge(m.fromId, m.toX, m.toY, duration);
+      this.boardRenderer.animateCardMerge(m.absorbedId, m.toX, m.toY, duration);
+      this.boardRenderer.triggerBondingPulse(m.survivorId);
     });
 
     setTimeout(() => {
@@ -162,9 +178,39 @@ export class GameEngine {
       const winIds = findWin(curWord, this.state.cards);
       if (winIds) {
         this.completeWord(winIds);
+        return;
+      }
+
+      // Cascade gravity: drop any tiles resting on previously absorbed cards
+      const gravity = mod(2 - this.state.r, 4);
+      const cascadedCards = settle(
+        this.state.n,
+        this.state.walls,
+        this.state.cards,
+        gravity
+      );
+
+      const didMove = cascadedCards.some(c => {
+        const prev = this.state.cards.find(p => p.id === c.id);
+        return prev && (prev.x !== c.x || prev.y !== c.y);
+      });
+
+      if (didMove) {
+        this.state.cards = cascadedCards;
+        this.boardRenderer.render(this.state.cards, this.state.angle);
+        // Allow tiles to slide smoothly into vacated space, then trigger chained merges
+        setTimeout(() => {
+          this.afterSettle();
+        }, 220);
       } else {
         this.state.locked = false;
         this.uiManager.updateStats(this.state);
+
+        if (this._queuedTurn !== null) {
+          const nextTurn = this._queuedTurn;
+          this._queuedTurn = null;
+          this.turn(nextTurn);
+        }
       }
     }, duration + 20);
   }
@@ -180,12 +226,18 @@ export class GameEngine {
     const winCards = this.state.cards.filter(c => winIds.includes(c.id));
     const survivor = winCards[0] || this.state.cards[0];
 
+    // If multiple cards contributed to win, animate absorbed cards sliding to survivor
+    const otherWinCards = winCards.slice(1);
+    if (otherWinCards.length > 0) {
+      otherWinCards.forEach(c => {
+        this.boardRenderer.animateCardMerge(c.id, survivor.x, survivor.y, MERGE_MS);
+      });
+    }
+
     survivor.ch = currentWord;
     survivor.completed = true;
     survivor.isCompletedWord = true;
     survivor.lifespan = currentWord.length;
-    delete survivor.wi;
-    delete survivor.we;
 
     const expiredIds = [];
     this.state.cards.forEach(c => {
@@ -201,7 +253,7 @@ export class GameEngine {
       this.boardRenderer.markDissolving(id);
     });
 
-    const waitTime = expiredIds.length > 0 ? 460 : 0;
+    const waitTime = otherWinCards.length > 0 ? (MERGE_MS + 20) : (expiredIds.length > 0 ? 460 : 0);
     if (expiredIds.length > 0 && this.sound) {
       setTimeout(() => this.sound.playDissolve(), 100);
     }
@@ -214,7 +266,7 @@ export class GameEngine {
         c => !removeIds.includes(c.id) && !expiredIds.includes(c.id)
       );
 
-      this.boardRenderer.triggerBondingPulse(survivor.id);
+      this.boardRenderer.triggerWordCompleteJuice(survivor.id);
       this.boardRenderer.render(this.state.cards, this.state.angle);
 
       this.state.incrementStreak();
@@ -223,6 +275,7 @@ export class GameEngine {
       const words = this.state.level.words;
       if (this.state.wordIdx === words.length - 1) {
         this.state.runCompleted = true;
+        this.state.markLevelCompleted();
         if (this.sound) this.sound.playVictory();
         if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
         this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level);

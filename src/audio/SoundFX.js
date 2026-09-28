@@ -219,6 +219,38 @@ class SoundFXManager {
       osc.stop(now + 0.03);
     } catch (e) {}
   }
+
+  /**
+   * Bright, ascending two-step chime on level / daily challenge launch
+   */
+  playLevelStart() {
+    if (this.muted) return;
+    this._initContext();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const notes = [392, 587.33]; // G4 -> D5
+
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const start = now + i * 0.07;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.16, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.22);
+      });
+    } catch (e) {}
+  }
 }
 
 export const soundFX = new SoundFXManager();

@@ -16,14 +16,29 @@ export class NativeBridge {
     // Check if running inside native Capacitor
     if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
       try {
-        const StatusBar = window.Capacitor.Plugins?.StatusBar;
-        if (StatusBar) {
-          await StatusBar.setStyle({ style: 'DARK' });
-          await StatusBar.setBackgroundColor({ color: '#0F161C' });
-        }
+        const savedTheme = localStorage.getItem('tumbleword_theme') || 'obsidian';
+        await this.syncThemeWithStatusBar(savedTheme);
       } catch (e) {
         // Optional in web environments
       }
+    }
+  }
+
+  /**
+   * Sync Capacitor Android status bar colors with active theme
+   * @param {'obsidian'|'vellum'} theme
+   */
+  async syncThemeWithStatusBar(theme) {
+    if (typeof window === 'undefined') return;
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      try {
+        const StatusBar = window.Capacitor.Plugins?.StatusBar;
+        if (StatusBar) {
+          const isVellum = theme === 'vellum';
+          await StatusBar.setStyle({ style: isVellum ? 'LIGHT' : 'DARK' });
+          await StatusBar.setBackgroundColor({ color: isVellum ? '#F7F5F0' : '#121316' });
+        }
+      } catch (e) {}
     }
   }
 
@@ -43,34 +58,52 @@ export class NativeBridge {
   }
 
   /**
-   * 5-Tier Hardware Back Button hierarchy
+   * Hardware Back Button hierarchy
    */
   async handleHardwareBack() {
-    // Tier 1: Close Victory Modal if visible
+    // Tier 1: Close Settings Subview if open
+    if (this.actions.isSettingsSubviewOpen && this.actions.isSettingsSubviewOpen()) {
+      this.actions.closeSettingsSubview();
+      return;
+    }
+
+    // Tier 2: Close Settings Fullscreen if open
+    if (this.actions.isSettingsOpen && this.actions.isSettingsOpen()) {
+      this.actions.closeSettings();
+      return;
+    }
+
+    // Tier 3: Close standard Modal if open
+    if (this.actions.isModalOpen && this.actions.isModalOpen()) {
+      this.actions.closeModal();
+      return;
+    }
+
+    // Tier 4: Close Victory Modal if visible
     if (this.actions.isVictoryOpen && this.actions.isVictoryOpen()) {
       this.actions.closeVictory();
       return;
     }
 
-    // Tier 2: Stop timeline solver playback if playing
+    // Tier 5: Stop timeline solver playback if playing
     if (this.actions.isPlayingTimeline && this.actions.isPlayingTimeline()) {
       this.actions.pauseTimeline();
       return;
     }
 
-    // Tier 3: Return from Active Game back to Home Screen
+    // Tier 6: Return from Active Game back to Home Screen
     if (this.actions.isGameScreen && this.actions.isGameScreen()) {
       this.actions.goToHome();
       return;
     }
 
-    // Tier 4: Exit Editor Mode back to Play Mode
+    // Tier 7: Exit Editor Mode back to Play Mode
     if (this.actions.isEditorMode && this.actions.isEditorMode()) {
       this.actions.setPlayMode();
       return;
     }
 
-    // Tier 5: Minimize Native Android App
+    // Tier 8: Minimize Native Android App
     if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
       try {
         const App = window.Capacitor.Plugins?.App;

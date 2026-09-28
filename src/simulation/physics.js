@@ -32,7 +32,7 @@ export function settle(n, walls, cards, g) {
         ny < 0 ||
         nx >= n ||
         ny >= n ||
-        walls[ny][nx] === '#' ||
+        (walls && walls[ny] && walls[ny][nx] === '#') ||
         occ.has(`${nx},${ny}`)
       ) {
         break;

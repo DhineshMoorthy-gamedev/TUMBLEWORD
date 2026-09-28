@@ -16,7 +16,10 @@ export function isCompleted(c) {
  * @returns {Array<number>|null} Array of winning card IDs, or null if no win
  */
 export function findWin(word, cards) {
-  const active = cards.filter(c => !isCompleted(c) && c.wi !== undefined);
+  if (!word || !cards || cards.length === 0) return null;
+
+  const active = cards.filter(c => !isCompleted(c) && c.ch);
+  if (active.length === 0) return null;
 
   // 1. Full-merge win (e.g. single tile that bonded into the whole word)
   const full = active.find(c => c.ch === word);
@@ -26,22 +29,29 @@ export function findWin(word, cards) {
   const at = new Map(active.map(c => [`${c.x},${c.y}`, c]));
   for (const [dx, dy] of DIRS) {
     for (const start of active) {
-      if (start.wi !== 0) continue;
-      const ids = [start.id];
-      let x = start.x + dx;
-      let y = start.y + dy;
-      let exp = start.we + 1;
+      if (!word.startsWith(start.ch)) continue;
 
-      while (exp < word.length) {
-        const c = at.get(`${x},${y}`);
-        if (!c || c.wi !== exp) break;
-        ids.push(c.id);
-        exp = c.we + 1;
-        x += dx;
-        y += dy;
+      const ids = [start.id];
+      let formed = start.ch;
+      let cx = start.x + dx;
+      let cy = start.y + dy;
+
+      while (formed.length < word.length) {
+        const nextCard = at.get(`${cx},${cy}`);
+        if (!nextCard) break;
+
+        const nextFormed = formed + nextCard.ch;
+        if (!word.startsWith(nextFormed)) break;
+
+        ids.push(nextCard.id);
+        formed = nextFormed;
+        cx += dx;
+        cy += dy;
       }
 
-      if (exp === word.length) return ids;
+      if (formed === word) {
+        return ids;
+      }
     }
   }
 

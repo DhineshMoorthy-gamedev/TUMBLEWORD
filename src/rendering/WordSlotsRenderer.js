@@ -13,9 +13,10 @@ export class WordSlotsRenderer {
    */
   renderSlots(word, isWon = false) {
     this.wordEl.innerHTML = '';
-    [...word].forEach(ch => {
+    [...word].forEach((ch, idx) => {
       const s = document.createElement('div');
-      s.className = `slot${isWon ? ' won' : ''}`;
+      s.className = `slot${isWon ? ' won' : ' slot-reveal'}`;
+      s.style.setProperty('--slot-idx', String(idx));
       s.textContent = ch;
       this.wordEl.appendChild(s);
     });

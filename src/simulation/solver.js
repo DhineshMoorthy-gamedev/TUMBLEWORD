@@ -30,18 +30,39 @@ export function simulateTurn(word, state, dir, n = 5, walls = null) {
   const boardN = state.n || n || 5;
   const boardWalls = state.walls || walls || [];
   const nr = mod(state.r + dir, 4);
-  const settled = settle(boardN, boardWalls, state.cards, mod(2 - nr, 4));
+  const gravity = mod(2 - nr, 4);
 
-  if (findWin(word, settled)) {
-    return { r: nr, cards: settled, won: true };
+  let currentCards = settle(boardN, boardWalls, state.cards, gravity);
+
+  while (true) {
+    if (findWin(word, currentCards)) {
+      return { r: nr, cards: currentCards, won: true };
+    }
+
+    const { newCards, merges } = tryMerge(word, currentCards);
+    if (merges.length === 0) {
+      break;
+    }
+
+    currentCards = newCards;
+    if (findWin(word, currentCards)) {
+      return { r: nr, cards: currentCards, won: true };
+    }
+
+    // Cascade gravity: drop any tiles resting on absorbed cards
+    const cascaded = settle(boardN, boardWalls, currentCards, gravity);
+    const didMove = cascaded.some(c => {
+      const prev = currentCards.find(p => p.id === c.id);
+      return prev && (prev.x !== c.x || prev.y !== c.y);
+    });
+
+    currentCards = cascaded;
+    if (!didMove) {
+      break;
+    }
   }
 
-  const { newCards } = tryMerge(word, settled);
-  if (findWin(word, newCards)) {
-    return { r: nr, cards: newCards, won: true };
-  }
-
-  return { r: nr, cards: newCards, won: false };
+  return { r: nr, cards: currentCards, won: findWin(word, currentCards) !== null };
 }
 
 /**

@@ -18,45 +18,52 @@ export function tryMerge(word, cards) {
 
     loop: for (let i = 0; i < cur.length; i++) {
       const ci = cur[i];
-      if (isCompleted(ci) || ci.wi === undefined) continue;
+      if (isCompleted(ci) || !ci.ch) continue;
 
       for (const [dx, dy] of DIRS) {
         const j = at.get(`${ci.x + dx},${ci.y + dy}`);
         if (j === undefined) continue;
 
         const cj = cur[j];
-        if (isCompleted(cj) || cj.wi === undefined) continue;
+        if (isCompleted(cj) || !cj.ch) continue;
 
-        let sIdx, aIdx, merged;
-        if (ci.we + 1 === cj.wi) {
-          // ci before cj -> ci survives
-          sIdx = i;
-          aIdx = j;
-          merged = {
-            ...ci,
-            ch: word.slice(ci.wi, cj.we + 1),
-            we: cj.we,
-            completed: false,
-            isCompletedWord: false
-          };
-        } else if (cj.we + 1 === ci.wi) {
-          // cj before ci -> cj survives
-          sIdx = j;
-          aIdx = i;
-          merged = {
-            ...cj,
-            ch: word.slice(cj.wi, ci.we + 1),
-            we: ci.we,
-            completed: false,
-            isCompletedWord: false
-          };
+        // Reading order: Left-to-Right (dx > 0) or Top-to-Bottom (dy > 0)
+        const forwardOrder = (dx > 0 || dy > 0);
+        const first = forwardOrder ? ci : cj;
+        const second = forwardOrder ? cj : ci;
+        const firstIdx = forwardOrder ? i : j;
+        const secondIdx = forwardOrder ? j : i;
+
+        const combo1 = first.ch + second.ch;
+        const combo2 = second.ch + first.ch;
+
+        let sIdx, aIdx, newCh;
+
+        if (word.includes(combo1)) {
+          sIdx = firstIdx;
+          aIdx = secondIdx;
+          newCh = combo1;
+        } else if (word.includes(combo2)) {
+          sIdx = secondIdx;
+          aIdx = firstIdx;
+          newCh = combo2;
         } else {
           continue;
         }
 
+        const survivor = cur[sIdx];
+        const absorbed = cur[aIdx];
+
+        const merged = {
+          ...survivor,
+          ch: newCh,
+          completed: false,
+          isCompletedWord: false
+        };
+
         merges.push({
-          survivorId: cur[sIdx].id,
-          absorbedId: cur[aIdx].id,
+          survivorId: survivor.id,
+          absorbedId: absorbed.id,
           toX: merged.x,
           toY: merged.y,
           newCh: merged.ch

@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0F161C">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#121316">
   <meta name="description" content="Tumbleword - A rotating gravity word puzzle game.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,118 +12,572 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700;800&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Roboto+Slab:wght@700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles/main.css">
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('tumbleword_theme');
+        if (saved === 'vellum') {
+          document.documentElement.setAttribute('data-theme', 'vellum');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'obsidian');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <main>
-    <!-- HOME SCREEN / LEVEL SELECTOR -->
+    <!-- ======================================================== -->
+    <!-- SCREEN 1: HOME HUB (Grid Leap Style)                     -->
+    <!-- ======================================================== -->
     <section class="home-screen" id="homeScreen">
-      <header class="home-header">
-        <div class="header-left">
-          <h1>Tumbleword</h1>
-          <span class="levelno">Campaign</span>
-        </div>
-        <div class="header-actions">
-          <button class="header-icon-btn" id="soundToggleBtnHome" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
-          <button class="header-icon-btn" id="fullscreenBtnHome" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+      <!-- 1. Top Navigation Bar (Full-Width Bottom Line & Safe Area) -->
+      <header class="home-topbar">
+        <div class="topbar-inner">
+          <div class="brand-logo">
+            <span class="logo-text">TUMBLEWORD</span>
+          </div>
+          <div class="topbar-right">
+            <button class="nav-icon-btn" id="homeAchievementsBtn" type="button" aria-label="Achievements & Stats" title="Achievements">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+              </svg>
+            </button>
+            <button class="nav-icon-btn" id="homeHelpBtn" type="button" aria-label="How to Play" title="How to Play / Rules">
+              ?
+            </button>
+            <button class="nav-icon-btn" id="homeSettingsBtn" type="button" aria-label="Settings" title="Settings">
+              ⚙
+            </button>
+          </div>
         </div>
       </header>
 
-      <p class="home-sub">Select a Level • Completed words tumble as obstacles</p>
+      <!-- 2. Home Content Container (Centered Cards) -->
+      <div class="home-content">
+        <!-- Daily Challenge Card (Top Card) -->
+        <div class="daily-challenge-section">
+          <div class="daily-challenge-card" id="dailyChallengeCard">
+            <div class="daily-card-left">
+              <div class="daily-badge-row">
+                <span class="daily-pill">DAILY CHALLENGE</span>
+                <span class="daily-streak-badge" id="dailyStreakBadge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>
+                  </svg>
+                  <span>0 STREAK</span>
+                </span>
+              </div>
+              <h3 class="daily-card-title" id="dailyCardTitle">Today</h3>
+              <p class="daily-card-sub" id="dailyCountdownText">Resets in 12h 00m</p>
+            </div>
+            <div class="daily-card-actions">
+              <button class="daily-cal-trigger-btn" id="dailyCalendarBtn" type="button" aria-label="Calendar Archive" title="Browse Past Days">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </button>
+              <button class="daily-play-btn" id="dailyPlayBtn" type="button" aria-label="Play Daily Challenge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <polygon points="6 3 20 12 6 21 6 3"/>
+                </svg>
+                <span class="play-text">PLAY</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-      <div class="level-grid" id="levelGrid">
-        <!-- Dynamically rendered by UIManager -->
+        <!-- Main Campaign Launch Card (Center Hero) -->
+        <div class="campaign-hero-section">
+          <div class="campaign-hero-card" id="campaignHeroCard">
+            <h2 class="hero-level-title" id="heroLevelTitle">Level 001</h2>
+            <p class="hero-level-sub" id="heroLevelSub">First Steps • Casual</p>
+            
+            <button class="hero-play-btn" id="heroPlayBtn" type="button" aria-label="Play Campaign Level">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right:6px;">
+                <polygon points="6 3 20 12 6 21 6 3"/>
+              </svg>
+              PLAY
+            </button>
+
+            <button class="browse-levels-btn" id="browseLevelsBtn" type="button">
+              ☰ Browse All 10 Levels
+            </button>
+          </div>
+        </div>
+
+        <!-- All 10 Levels Drawer Grid (Editor Only) -->
+        <div class="levels-drawer-section" id="levelsDrawerSection" hidden>
+          <div class="drawer-header-row">
+            <h3 class="drawer-title">CAMPAIGN LEVELS</h3>
+            <span class="drawer-count-badge" id="levelsProgressCount">10 LEVELS AVAILABLE</span>
+          </div>
+
+          <div class="level-grid" id="levelGrid">
+            <!-- Dynamically populated by UIManager -->
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- GAMEPLAY SCREEN -->
+    <!-- ======================================================== -->
+    <!-- SCREEN 2: ACTIVE GAMEPLAY SCREEN                          -->
+    <!-- ======================================================== -->
     <section class="game-screen" id="gameScreen" hidden>
-      <header>
-        <div class="header-left">
-          <button class="back-btn" id="backToLevelsBtn" type="button" title="Back to Levels">⬅ Levels</button>
-          <div class="level-info-header">
-            <h2 id="currentLevelName">Level 1: First Steps</h2>
-            <span class="level-meta-badge" id="currentLevelMeta">5×5 Grid • 3 Words</span>
+      <!-- 1. DOCKED TOPBAR -->
+      <header class="game-topbar">
+        <div class="topbar-inner">
+          <div class="game-topbar-left">
+            <button class="nav-icon-btn" id="backToLevelsBtn" type="button" title="Back to Home Hub" aria-label="Back to Home">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
           </div>
-        </div>
-        <div class="header-actions">
-          <button class="header-icon-btn" id="soundToggleBtn" type="button" title="Toggle Sound (M)" aria-label="Toggle Sound">🔊</button>
-          <button class="header-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+          <div class="game-topbar-center">
+            <h2 class="game-level-title" id="currentLevelName">LEVEL 1</h2>
+          </div>
+          <div class="game-topbar-right">
+            <button class="nav-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+          </div>
         </div>
       </header>
 
-      <div class="mode-toggle-bar">
-        <button class="mode-btn active" id="playModeBtn" type="button">🎮 Play Mode</button>
-        <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Editor / Solver</button>
-      </div>
-
-      <div class="word" id="word" aria-label="Target word"></div>
-      <div class="stats">
-        <span>Word <b id="wordProgress">1 / 3</b></span>
-        <span>Streak <b id="streak">0</b></span>
-        <span>Best <b id="bestStreak">0</b></span>
-        <span>Moves <b id="moves">0</b></span>
-      </div>
-
-      <div class="stage" id="stage">
-        <div class="board" id="board">
-          <div class="grid" id="grid"></div>
-          <div class="cards" id="cards"></div>
+      <!-- 2. GAMEPLAY MAIN CONTAINER -->
+      <div class="game-content-container">
+        <!-- Editor Mode Toggle Bar (Only shown in Editor target) -->
+        <div class="mode-toggle-bar" id="modeToggleBar">
+          <button class="mode-btn active" id="playModeBtn" type="button">🎮 Play</button>
+          <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Solver</button>
         </div>
-      </div>
 
-      <p class="status" id="status" aria-live="polite"></p>
+        <!-- TARGET WORD & COMPACT HUD STRIP -->
+        <div class="game-hud-strip">
+          <div class="hud-stat-pill">
+            <span class="hud-stat-label">WORD</span>
+            <b class="hud-stat-val" id="wordProgress">1/3</b>
+          </div>
 
-      <div class="row" id="turnrow">
-        <button class="turn" id="left" type="button" aria-label="Turn maze left">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v5h5"/><path d="M3.5 9A9 9 0 1 1 5 17"/></svg>Turn left
-        </button>
-        <button class="turn" id="right" type="button" aria-label="Turn maze right">
-          Turn right<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4v5h-5"/><path d="M20.5 9A9 9 0 1 0 19 17"/></svg>
-        </button>
-      </div>
+          <div class="word" id="word" aria-label="Target word"></div>
 
-      <div class="solver-box" id="solverBox">
-        <div class="solver-header">
-          <span>Pre-Solved Solution Timeline</span>
-          <span>Move: <b id="tlMoves">0</b> / <b id="tlTotalMoves">0</b></span>
-        </div>
-        <div class="slider-wrapper">
-          <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="0" value="0" aria-label="Solution scrubber slider">
-          <div class="slider-labels">
-            <span id="tlWordInfo">Word 1: CAT</span>
-            <span id="tlStepInfo">Move 0 / 0</span>
+          <div class="hud-stat-pill">
+            <span class="hud-stat-label">MOVES</span>
+            <b class="hud-stat-val" id="moves">0</b>
           </div>
         </div>
-        <div class="solver-controls">
-          <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start">⏮</button>
-          <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
-          <button class="solver-btn auto" id="solvePlay" type="button">▶ Play Solution</button>
-          <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
-          <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish">⏭</button>
+
+        <!-- HERO STAGE & ROTATING BOARD -->
+        <div class="stage" id="stage">
+          <div class="board" id="board">
+            <div class="grid" id="grid"></div>
+            <div class="cards" id="cards"></div>
+          </div>
         </div>
-      </div>
 
-      <div class="row">
-        <button class="ghost" id="undo" type="button">Undo</button>
-        <button class="ghost" id="restart" type="button">Restart Level</button>
-      </div>
+        <!-- PRIMARY GRAVITY CONTROLS -->
+        <div class="turn-controls-row" id="turnrow">
+          <button class="turn-btn turn-left" id="left" type="button" aria-label="Turn gravity left">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 4v5h5"/>
+              <path d="M3.5 9A9 9 0 1 1 5 17"/>
+            </svg>
+            <span>Turn Left</span>
+          </button>
+          <button class="turn-btn turn-right" id="right" type="button" aria-label="Turn gravity right">
+            <span>Turn Right</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 4v5h-5"/>
+              <path d="M20.5 9A9 9 0 1 0 19 17"/>
+            </svg>
+          </button>
+        </div>
 
-      <div class="desktop-legend" id="desktopLegend">
-        <span><b>[← / → / A / D]</b> Turn</span>
-        <span><b>[Z]</b> Undo</span>
-        <span><b>[R]</b> Restart</span>
-        <span><b>[M]</b> Mute</span>
-        <span><b>[F]</b> Fullscreen</span>
+        <!-- SECONDARY ACTION BAR (UNDO, HINT, RESTART) -->
+        <div class="game-actions-row">
+          <button class="action-btn" id="undo" type="button" title="Undo Move (Z)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span>Undo</span>
+          </button>
+
+          <button class="action-btn action-hint-btn" id="hintBtn" type="button" title="Get Hint (H)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"></path>
+              <path d="M10 22h4"></path>
+              <path d="M15.09 13.72A6 6 0 1 0 8.91 13.72 M12 2v2"></path>
+            </svg>
+            <span>Hint</span>
+          </button>
+
+          <button class="action-btn" id="restart" type="button" title="Restart Level (R)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span>Restart</span>
+          </button>
+        </div>
+
+        <!-- SOLVER BOX (EDITOR ONLY) -->
+        <div class="solver-box" id="solverBox">
+          <div class="solver-header">
+            <span>Pre-Solved Solution Timeline</span>
+            <span>Move: <b id="tlMoves">0</b> / <b id="tlTotalMoves">0</b></span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="0" value="0" aria-label="Solution scrubber slider">
+            <div class="slider-labels">
+              <span id="tlWordInfo">Word 1: CAT</span>
+              <span id="tlStepInfo">Move 0 / 0</span>
+            </div>
+          </div>
+          <div class="solver-controls">
+            <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start">⏮</button>
+            <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
+            <button class="solver-btn auto" id="solvePlay" type="button">▶ Play</button>
+            <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
+            <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish">⏭</button>
+          </div>
+        </div>
+
+        <!-- DESKTOP KEYBOARD LEGEND (DESKTOP / WEB ONLY) -->
+        <div class="desktop-legend" id="desktopLegend">
+          <span><b>[A/D/←/→]</b> Turn</span>
+          <span><b>[Z]</b> Undo</span>
+          <span><b>[H]</b> Hint</span>
+          <span><b>[R]</b> Restart</span>
+        </div>
+
+        <!-- BANNER AD RESERVED SPACE (MOBILE & SAFE AREA) -->
+        <div class="banner-ad-spacer" aria-hidden="true"></div>
       </div>
     </section>
   </main>
 
+  <!-- ======================================================== -->
+  <!-- MODALS OVERLAYS                                           -->
+  <!-- ======================================================== -->
+
+  <!-- 1. ACHIEVEMENTS MODAL -->
+  <div class="modal-overlay" id="achievementsModal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+          </svg>
+          <h3>Achievements &amp; Stats</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="achievements-grid">
+          <div class="achievement-box">
+            <span>Best Word Streak</span>
+            <b id="statsBestStreak">0</b>
+          </div>
+          <div class="achievement-box">
+            <span>Daily Streak</span>
+            <b id="statsDailyStreak">0 Days</b>
+          </div>
+          <div class="achievement-box">
+            <span>Campaign Cleared</span>
+            <b id="statsCampaignCleared">0 / 10</b>
+          </div>
+          <div class="achievement-box">
+            <span>Total Words Solved</span>
+            <b id="statsTotalWords">0</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. HOW TO PLAY / RULES MODAL -->
+  <div class="modal-overlay" id="helpModal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>How to Play</h3>
+        <button class="modal-close-btn" data-close-modal type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>1. Turn Gravity:</strong> Tap <em>Turn Left</em> or <em>Turn Right</em> (or use <code>A</code> / <code>D</code> / Arrow keys) to rotate the maze $90^\circ$. All letters slide and fall down.</p>
+        <p><strong>2. Bond Words in Order:</strong> Slide consecutive letters next to each other in correct word order (e.g., <code>C</code> + <code>A</code> $\rightarrow$ <code>CA</code>, then <code>CA</code> + <code>T</code> $\rightarrow$ <code>CAT</code>).</p>
+        <p><strong>3. Completed Words Tumble:</strong> When a word is formed, it becomes a solid obstacle tile that stays on the board, altering gravity for future words!</p>
+        <p><strong>4. Clear the Level:</strong> Complete all words in the sequence to conquer the level.</p>
+      </div>
+    </div>
+  </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 3: FULL-SCREEN SETTINGS & SUBVIEWS                 -->
+    <!-- ======================================================== -->
+    <section class="settings-screen" id="settingsScreen" hidden>
+      <header class="settings-topbar">
+        <div class="topbar-inner">
+          <div class="settings-topbar-left">
+            <button class="settings-back-btn" id="settingsBackBtn" type="button" aria-label="Back" hidden>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+          </div>
+          <h2 class="settings-title" id="settingsTitle">SETTINGS</h2>
+          <div class="settings-topbar-right">
+            <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="Close Settings" title="Close">
+              ✕
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="settings-body" id="settingsBody">
+        <!-- 1. Main Settings Menu -->
+        <div class="settings-main-view" id="settingsMainView">
+          <!-- PREFERENCES GROUP -->
+          <div class="settings-group">
+            <div class="settings-group-header">PREFERENCES</div>
+            <div class="settings-card">
+              <div class="settings-row">
+                <div class="settings-row-label">
+                  <span>Theme Mode</span>
+                </div>
+                <div class="segmented-pill-control" data-selected="obsidian">
+                  <div class="segment-slider"></div>
+                  <button type="button" class="segment-btn active" id="settingsThemeObsidianBtn">Dark 🌙</button>
+                  <button type="button" class="segment-btn" id="settingsThemeVellumBtn">Light ☀️</button>
+                </div>
+              </div>
+
+              <div class="settings-row">
+                <div class="settings-row-label">
+                  <span>Sound Effects</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingsSoundToggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <div class="settings-row-label">
+                  <span>Haptic Vibration</span>
+                  <span class="unavail-pill" id="vibrateUnavailableBadge" hidden>Unavailable</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingsVibrateToggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <div class="settings-row-label">
+                  <span>Daily Reminders</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingsReminderToggle">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-row" id="settingsRemoveAdsRow">
+                <div class="settings-row-label">
+                  <span>Remove Ads</span>
+                </div>
+                <button class="pill-badge-btn gold" id="settingsRemoveAdsBtn" type="button">★ Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUPPORT & ABOUT GROUP -->
+          <div class="settings-group">
+            <div class="settings-group-header">SUPPORT &amp; ABOUT</div>
+            <div class="settings-card">
+              <button class="settings-nav-row" id="rateAppBtn" type="button">
+                <span>Rate the App</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                </svg>
+              </button>
+
+              <button class="settings-nav-row" id="contactSupportBtn" type="button">
+                <span>Contact Support</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                </svg>
+              </button>
+
+              <button class="settings-nav-row" id="sendFeedbackBtn" type="button">
+                <span>Send Feedback</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                </svg>
+              </button>
+
+              <button class="settings-nav-row" id="privacyPolicyBtn" type="button">
+                <span>Privacy Policy</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+
+              <button class="settings-nav-row" id="aboutCreditsBtn" type="button">
+                <span>About &amp; Credits</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- FOOTER NOTE -->
+          <div class="settings-footer">
+            TUMBLEWORD • v0.0.1 • OLAI DIGITAL STUDIOS
+          </div>
+        </div>
+
+        <!-- 2. In-App Subview Container -->
+        <div class="settings-subview" id="settingsSubview" hidden>
+          <!-- SUBVIEW: PRIVACY POLICY -->
+          <div class="subview-content" id="subviewPrivacyPolicy" hidden>
+            <h3>Privacy Policy</h3>
+            <p class="subview-meta">Last Updated: September 2026</p>
+            <div class="subview-doc">
+              <p><strong>1. Zero Data Collection:</strong> Tumbleword does not collect, transmit, store, or sell any personal information or telemetry on external servers.</p>
+              <p><strong>2. Local Device Storage:</strong> Game progress, high scores, streaks, unlocked levels, and audio preferences are saved strictly on your local device via standard browser <code>localStorage</code>.</p>
+              <p><strong>3. 100% Offline Gameplay:</strong> The game functions completely offline without requiring any active internet connection or account creation.</p>
+              <p><strong>4. Children’s Privacy:</strong> Because no personal information is collected, Tumbleword complies fully with global privacy regulations including COPPA and GDPR.</p>
+              <p><strong>5. Contact:</strong> If you have any inquiries regarding this policy, contact us at <code>support@olaimediagroup.com</code>.</p>
+            </div>
+          </div>
+
+          <!-- SUBVIEW: ABOUT -->
+          <div class="subview-content" id="subviewAboutCredits" hidden>
+            <div class="about-screen-container">
+              <!-- 1. BRAND IDENTITY BLOCK -->
+              <div class="about-brand-section">
+                <div class="about-app-icon-tile">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <h1 class="about-app-name">TUMBLEWORD</h1>
+                <div class="about-version-badge">v0.0.1</div>
+              </div>
+
+              <!-- 2. DEVELOPER CREDITS (Clean Centered Hierarchy) -->
+              <div class="about-credits-section">
+                <span class="about-cred-label">DEVELOPED BY</span>
+                <span class="about-cred-studio">OLAI Digital Studios</span>
+
+                <span class="about-cred-label" style="margin-top: 14px;">LEAD DEVELOPER</span>
+                <span class="about-cred-name">Dhinesh</span>
+
+                <span class="about-cred-location">Chennai, Tamil Nadu, India</span>
+              </div>
+
+              <!-- 3. STACKED ACTION BUTTONS -->
+              <div class="about-actions-stacked">
+                <button class="about-wide-btn" id="checkForUpdatesBtn" type="button">
+                  Check for Updates
+                </button>
+                <button class="about-wide-btn" id="moreGamesBtn" type="button">
+                  <span>More Games by OLAI</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- 4. COPYRIGHT FOOTER -->
+              <div class="about-copyright-block">
+                <p class="about-copyright-title">© 2026 Olai Digital Studios</p>
+                <p class="about-copyright-sub">All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <!-- 4. CALENDAR ARCHIVE MODAL (5-SECTION MODAL) -->
+  <div class="modal-overlay" id="calendarModal" hidden>
+    <div class="modal-card calendar-modal-card">
+      <!-- 1. HEADER BAR -->
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <h3>Puzzle Calendar</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal type="button">✕</button>
+      </div>
+
+      <div class="modal-body calendar-modal-body">
+        <!-- 2. MONTH NAVIGATION BAR -->
+        <div class="cal-month-nav">
+          <button class="cal-nav-btn" id="calPrevMonthBtn" type="button" aria-label="Previous Month">‹</button>
+          <span class="cal-month-title" id="calMonthYearTitle">SEPTEMBER 2026</span>
+          <button class="cal-nav-btn" id="calNextMonthBtn" type="button" aria-label="Next Month">›</button>
+        </div>
+
+        <!-- 3. 3-COLUMN STATS SUMMARY STRIP -->
+        <div class="cal-stats-strip">
+          <div class="cal-stat-pill">
+            <span class="cal-stat-label">THIS MONTH</span>
+            <b class="cal-stat-value" id="calStatThisMonth">0 / 30</b>
+          </div>
+          <div class="cal-stat-pill">
+            <span class="cal-stat-label">LIVE STREAK</span>
+            <b class="cal-stat-value" id="calStatLiveStreak">0 🔥</b>
+          </div>
+          <div class="cal-stat-pill">
+            <span class="cal-stat-label">ALL-TIME SOLVED</span>
+            <b class="cal-stat-value" id="calStatAllTime">0</b>
+          </div>
+        </div>
+
+        <!-- 4. 7-COLUMN CALENDAR GRID -->
+        <div class="cal-grid-wrapper">
+          <div class="cal-weekday-row">
+            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+          </div>
+          <div class="calendar-days-grid" id="calendarDaysGrid">
+            <!-- Dynamically populated 7-column tiles by UIManager -->
+          </div>
+        </div>
+
+        <!-- 5. FOOTER GUIDE -->
+        <div class="cal-footer-guide">
+          Daily puzzles available from Sept 16, 2026
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- LEVEL VICTORY OVERLAY -->
   <div class="victory-overlay" id="victoryOverlay" hidden>
     <div class="victory-card">
-      <div class="victory-icon">🏆</div>
+      <div class="victory-icon" style="color:var(--goal-color);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+        </svg>
+      </div>
       <h2 id="victoryTitle">Level Completed!</h2>
       <p class="victory-sub" id="victorySubtitle">All words spelled successfully!</p>
       <div class="victory-stats">
@@ -132,10 +586,27 @@
         <div class="stat-box"><span>Best Streak</span><b id="victoryBest">0</b></div>
       </div>
       <div class="victory-actions">
-        <button class="turn next" id="nextLevelBtn" type="button">Next Level ➔</button>
+        <button class="turn next" id="nextLevelBtn" type="button" style="background:var(--goal-color); color:var(--accent-contrast);">
+          Next Level
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
         <div class="row">
-          <button class="ghost" id="replayLevelBtn" type="button">Replay Level ↺</button>
-          <button class="ghost" id="victoryHomeBtn" type="button">Level Select ⌂</button>
+          <button class="ghost" id="replayLevelBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Replay
+          </button>
+          <button class="ghost" id="victoryHomeBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Level Select
+          </button>
         </div>
       </div>
     </div>
