@@ -4,5 +4,6 @@ editor - npm run dev:editor , npm run preview:editor , npm run build:editor
 playstore - npm run dev:playstore , npm run preview:playstore , npm run build:playstore
 default - npm run dev
 
-agy --conversation=f1ddbdd8-ee01-4e1a-8c79-8e552be0e356
+agy --conversation=f1ddbdd8-ee01-4e1a-8c79-8e552be0e356 - dev
+agy --conversation=89f994db-f619-40ba-8fd6-1f9c31613421 - analysis
 

@@ -251,6 +251,96 @@ class SoundFXManager {
       });
     } catch (e) {}
   }
+
+  /**
+   * Staggered star reveal chime (1st, 2nd, 3rd star with rising pitch)
+   * @param {number} starIndex - 1, 2, or 3
+   */
+  playStarDrop(starIndex = 1) {
+    if (this.muted) return;
+    this._initContext();
+    if (!this.ctx) return;
+
+    try {
+      const baseFreq = starIndex === 1 ? 523.25 : starIndex === 2 ? 659.25 : 783.99; // C5, E5, G5
+      const now = this.ctx.currentTime;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.2, now + 0.15);
+
+      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } catch (e) {}
+  }
+
+  /**
+   * Subtle crack / dim sound when a star tier is lost during moves
+   */
+  playStarCrack() {
+    if (this.muted) return;
+    this._initContext();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch (e) {}
+  }
+
+  /**
+   * Low dramatic descending tone when move budget is exhausted
+   */
+  playOutOfMoves() {
+    if (this.muted) return;
+    this._initContext();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      [220, 174.61, 130.81].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const start = now + idx * 0.1;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.85, start + 0.22);
+
+        gain.gain.setValueAtTime(0.18, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.22);
+      });
+    } catch (e) {}
+  }
 }
 
 export const soundFX = new SoundFXManager();

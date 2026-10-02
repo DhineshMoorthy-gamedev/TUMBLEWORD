@@ -35,6 +35,7 @@ export class GameEngine {
     this.state.setLevel(levelId);
     this.nextCardId = 1;
     this.uiManager.hideVictory();
+    this.uiManager.hideOutOfMoves();
     if (this.sound) this.sound.playLevelStart();
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('light');
     this.boardRenderer.initGrid(this.state.n, this.state.walls);
@@ -144,6 +145,10 @@ export class GameEngine {
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
 
+      if (this.checkOutOfMoves()) {
+        return;
+      }
+
       if (this._queuedTurn !== null) {
         const nextTurn = this._queuedTurn;
         this._queuedTurn = null;
@@ -152,6 +157,25 @@ export class GameEngine {
     } else {
       this.applyMergeAnimation(merges, newCards);
     }
+  }
+
+  /**
+   * Check if move budget is exceeded
+   * @returns {boolean}
+   */
+  checkOutOfMoves() {
+    if (this.state.runCompleted || this.state.mode !== 'play') return false;
+
+    const maxMoves = this.state.getMaxMoves();
+    if (this.state.moves >= maxMoves) {
+      this.state.outOfMoves = true;
+      this.state.locked = true;
+      if (this.sound) this.sound.playOutOfMoves();
+      if (this.nativeBridge) this.nativeBridge.triggerHaptic('error');
+      this.uiManager.showOutOfMoves(this.state);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -205,6 +229,10 @@ export class GameEngine {
       } else {
         this.state.locked = false;
         this.uiManager.updateStats(this.state);
+
+        if (this.checkOutOfMoves()) {
+          return;
+        }
 
         if (this._queuedTurn !== null) {
           const nextTurn = this._queuedTurn;
@@ -276,11 +304,12 @@ export class GameEngine {
       if (this.state.wordIdx === words.length - 1) {
         this.state.runCompleted = true;
         this.state.markLevelCompleted();
+        const earnedStars = this.state.getCurrentStars();
         if (this.sound) this.sound.playVictory();
         if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
-        this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level);
+        this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level, earnedStars, this.sound);
         this.uiManager.setStatus(
-          `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves.`
+          `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves (${earnedStars}★).`
         );
         this.uiManager.updateStats(this.state);
         return;
@@ -308,6 +337,12 @@ export class GameEngine {
    * Undo previous turn
    */
   undo() {
+    if (this.state.outOfMoves) {
+      this.state.outOfMoves = false;
+      this.state.locked = false;
+      this.uiManager.hideOutOfMoves();
+    }
+
     if (
       this.state.locked ||
       !this.state.hist.length ||

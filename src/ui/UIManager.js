@@ -10,8 +10,9 @@ export class UIManager {
    * @param {(levelId: number) => void} onSelectLevel
    * @param {number} [activeLevelId]
    * @param {Array<number>} [completedLevels]
+   * @param {Record<number, number>} [levelStars]
    */
-  renderHomeScreen(levels, onSelectLevel, activeLevelId = 1, completedLevels = []) {
+  renderHomeScreen(levels, onSelectLevel, activeLevelId = 1, completedLevels = [], levelStars = {}) {
     if (!this.el.levelGrid) return;
     this.el.levelGrid.innerHTML = '';
 
@@ -19,6 +20,16 @@ export class UIManager {
       const card = document.createElement('button');
       const isCompleted = completedLevels.includes(lvl.id);
       const isActive = lvl.id === activeLevelId;
+      const stars = levelStars[lvl.id] || 0;
+
+      let starsHtml = '';
+      if (stars > 0) {
+        starsHtml = `
+          <span class="level-card-stars">
+            ${'★'.repeat(stars)}${'<span class="empty-star">★</span>'.repeat(3 - stars)}
+          </span>
+        `;
+      }
 
       card.className = `level-card${isActive ? ' active' : ''}${isCompleted ? ' completed' : ''}`;
       card.type = 'button';
@@ -26,6 +37,7 @@ export class UIManager {
       card.innerHTML = `
         <div class="level-card-top">
           <span class="level-badge">${isCompleted ? '✓ ' : ''}Level ${lvl.id}</span>
+          ${starsHtml}
           <span class="grid-badge">${lvl.n}×${lvl.n}</span>
         </div>
         <div class="level-card-title">${lvl.name}</div>
@@ -52,14 +64,16 @@ export class UIManager {
    * Render the Center Hero Launch Card
    * @param {object} level
    * @param {boolean} isContinue
+   * @param {number} [stars]
    */
-  renderCampaignHero(level, isContinue = false) {
+  renderCampaignHero(level, isContinue = false, stars = 0) {
     if (this.el.heroLevelTitle) {
       const numStr = String(level.id).padStart(3, '0');
       this.el.heroLevelTitle.textContent = `Level ${numStr}`;
     }
     if (this.el.heroLevelSub) {
-      this.el.heroLevelSub.textContent = `${level.name} • ${level.difficultyTier}`;
+      const starsLabel = stars === 3 ? '⭐⭐⭐ Master' : stars === 2 ? '⭐⭐ Skilled' : stars === 1 ? '⭐ Cleared' : level.difficultyTier;
+      this.el.heroLevelSub.textContent = `${level.name} • ${starsLabel}`;
     }
     if (this.el.heroPlayBtn) {
       this.el.heroPlayBtn.innerHTML = isContinue
@@ -230,6 +244,7 @@ export class UIManager {
    * @param {object} stats
    */
   renderAchievements(stats) {
+    if (this.el.statsTotalStars) this.el.statsTotalStars.textContent = `${stats.totalStars || 0} / 30 ⭐`;
     if (this.el.statsBestStreak) this.el.statsBestStreak.textContent = String(stats.bestStreak || 0);
     if (this.el.statsDailyStreak) this.el.statsDailyStreak.textContent = `${stats.dailyStreak || 0} Days`;
     if (this.el.statsCampaignCleared) this.el.statsCampaignCleared.textContent = `${stats.completedLevelsCount || 0} / ${stats.totalCampaignLevels || 10}`;
@@ -331,13 +346,48 @@ export class UIManager {
   updateStats(gameState, isPlayingTimeline = false) {
     const totalWords = gameState.level ? gameState.level.words.length : 3;
     const currentWordNum = Math.min(gameState.wordIdx + 1, totalWords);
+    const optimal = gameState.getOptimalMoves ? gameState.getOptimalMoves() : 10;
+    const twoStarLimit = gameState.get2StarLimit ? gameState.get2StarLimit() : 14;
+    const maxMoves = gameState.getMaxMoves ? gameState.getMaxMoves() : 18;
+    const moves = gameState.moves || 0;
+    const remMoves = Math.max(0, maxMoves - moves);
+    const currentStars = gameState.getCurrentStars ? gameState.getCurrentStars() : 3;
 
     if (this.el.wordProgress) {
       this.el.wordProgress.textContent = `${currentWordNum}/${totalWords}`;
     }
-    if (this.el.moves) this.el.moves.textContent = String(gameState.moves);
+    if (this.el.moves) {
+      this.el.moves.textContent = `${moves}/${maxMoves}`;
+    }
     if (this.el.streak) this.el.streak.textContent = String(gameState.streak);
     if (this.el.bestStreak) this.el.bestStreak.textContent = String(gameState.bestStreak);
+
+    // Update Minimalist Star Icons Active Glow
+    if (this.el.starIcon1) this.el.starIcon1.classList.toggle('active', currentStars >= 1);
+    if (this.el.starIcon2) this.el.starIcon2.classList.toggle('active', currentStars >= 2);
+    if (this.el.starIcon3) this.el.starIcon3.classList.toggle('active', currentStars >= 3);
+
+    // Update Minimal Context Goal Label (Clear, plain English phrasing)
+    if (this.el.trackerNote) {
+      if (moves < optimal) {
+        const diff = optimal - moves;
+        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 3 Stars`;
+      } else if (moves === optimal) {
+        this.el.trackerNote.textContent = 'Last move for 3 Stars!';
+      } else if (moves < twoStarLimit) {
+        const diff = twoStarLimit - moves;
+        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 2 Stars`;
+      } else if (moves === twoStarLimit) {
+        this.el.trackerNote.textContent = 'Last move for 2 Stars!';
+      } else if (moves < maxMoves) {
+        const diff = maxMoves - moves;
+        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 1 Star`;
+      } else if (moves === maxMoves) {
+        this.el.trackerNote.textContent = 'Final move to clear level!';
+      } else {
+        this.el.trackerNote.textContent = 'Out of moves';
+      }
+    }
 
     if (this.el.undoBtn) {
       this.el.undoBtn.disabled = isPlayingTimeline || gameState.hist.length === 0;
@@ -508,10 +558,13 @@ export class UIManager {
    * @param {number} moves
    * @param {number} bestStreak
    * @param {object} [level]
+   * @param {number} [earnedStars]
+   * @param {import('../audio/SoundFX.js').SoundFXManager} [sound]
    */
-  showVictory(moves, bestStreak, level = null) {
+  showVictory(moves, bestStreak, level = null, earnedStars = 3, sound = null) {
     if (this.el.victoryMoves) this.el.victoryMoves.textContent = String(moves);
-    if (this.el.victoryBest) this.el.victoryBest.textContent = String(bestStreak);
+    const optimal = level && level.optimalMoves ? level.optimalMoves : 10;
+    if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = String(optimal);
 
     if (level) {
       if (this.el.victoryTitle) {
@@ -525,7 +578,33 @@ export class UIManager {
       }
     }
 
+    if (this.el.victoryRatingPill) {
+      if (earnedStars === 3) {
+        this.el.victoryRatingPill.textContent = '⭐⭐⭐ FLAWLESS / OPTIMAL';
+      } else if (earnedStars === 2) {
+        this.el.victoryRatingPill.textContent = '⭐⭐ SKILLED SOLVER';
+      } else {
+        this.el.victoryRatingPill.textContent = '⭐ LEVEL CLEARED';
+      }
+    }
+
+    // Reset stars
+    [this.el.victoryStar1, this.el.victoryStar2, this.el.victoryStar3].forEach(s => {
+      if (s) s.classList.remove('earned');
+    });
+
     if (this.el.victoryOverlay) this.el.victoryOverlay.hidden = false;
+
+    // Trigger staggered star drop-in animations
+    for (let i = 1; i <= 3; i++) {
+      if (i <= earnedStars) {
+        setTimeout(() => {
+          const starEl = this.el[`victoryStar${i}`];
+          if (starEl) starEl.classList.add('earned');
+          if (sound && sound.playStarDrop) sound.playStarDrop(i);
+        }, i * 260);
+      }
+    }
   }
 
   /**
@@ -533,5 +612,36 @@ export class UIManager {
    */
   hideVictory() {
     if (this.el.victoryOverlay) this.el.victoryOverlay.hidden = true;
+    [this.el.victoryStar1, this.el.victoryStar2, this.el.victoryStar3].forEach(s => {
+      if (s) s.classList.remove('earned');
+    });
+  }
+
+  /**
+   * Show out-of-moves modal
+   * @param {object} gameState
+   */
+  showOutOfMoves(gameState) {
+    const totalWords = gameState.level ? gameState.level.words.length : 3;
+    const maxMoves = gameState.getMaxMoves ? gameState.getMaxMoves() : 16;
+
+    if (this.el.outOfMovesWords) {
+      this.el.outOfMovesWords.textContent = `${gameState.wordIdx} / ${totalWords}`;
+    }
+    if (this.el.outOfMovesCount) {
+      this.el.outOfMovesCount.textContent = `${gameState.moves} / ${maxMoves}`;
+    }
+    if (this.el.outOfMovesModal) {
+      this.el.outOfMovesModal.hidden = false;
+    }
+  }
+
+  /**
+   * Hide out-of-moves modal
+   */
+  hideOutOfMoves() {
+    if (this.el.outOfMovesModal) {
+      this.el.outOfMovesModal.hidden = true;
+    }
   }
 }

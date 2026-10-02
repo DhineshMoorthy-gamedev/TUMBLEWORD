@@ -7,7 +7,14 @@ import {
   loadUnlockedLevel,
   saveUnlockedLevel,
   loadTotalWordsSolved,
-  addTotalWordsSolved
+  addTotalWordsSolved,
+  loadLevelStars,
+  saveLevelStars,
+  loadLevelBestMoves,
+  saveLevelBestMoves,
+  calculateMoveBudget,
+  calculate2StarLimit,
+  calculateStars
 } from '../utils/storage.js';
 
 export class GameState {
@@ -15,6 +22,8 @@ export class GameState {
     this.completedLevels = loadCompletedLevels();
     this.unlockedLevel = loadUnlockedLevel();
     this.totalWords = loadTotalWordsSolved();
+    this.levelStars = loadLevelStars();
+    this.levelBestMoves = loadLevelBestMoves();
     this.currentLevelId = this.unlockedLevel || 1;
     this.level = CAMPAIGN_LEVELS.find(l => l.id === this.currentLevelId) || CAMPAIGN_LEVELS[0];
     this.n = this.level.n;
@@ -29,6 +38,7 @@ export class GameState {
     this.hist = [];
     this.locked = false;
     this.runCompleted = false;
+    this.outOfMoves = false;
     this.mode = 'play'; // 'play' | 'editor'
     this.screen = 'home'; // 'home' | 'game'
   }
@@ -57,7 +67,28 @@ export class GameState {
     this.hist = [];
     this.locked = false;
     this.runCompleted = false;
+    this.outOfMoves = false;
     this.mode = mode;
+  }
+
+  getOptimalMoves() {
+    return this.level && this.level.optimalMoves ? this.level.optimalMoves : 10;
+  }
+
+  getMaxMoves() {
+    return calculateMoveBudget(this.getOptimalMoves());
+  }
+
+  get2StarLimit() {
+    return calculate2StarLimit(this.getOptimalMoves());
+  }
+
+  getCurrentStars() {
+    return calculateStars(this.moves, this.getOptimalMoves());
+  }
+
+  getMovesRemaining() {
+    return Math.max(0, this.getMaxMoves() - this.moves);
   }
 
   recordHistory(dir) {
@@ -90,6 +121,12 @@ export class GameState {
       if (!this.completedLevels.includes(this.currentLevelId)) {
         this.completedLevels.push(this.currentLevelId);
       }
+      const earnedStars = calculateStars(this.moves, this.getOptimalMoves());
+      saveLevelStars(this.currentLevelId, earnedStars);
+      saveLevelBestMoves(this.currentLevelId, this.moves);
+      this.levelStars[this.currentLevelId] = Math.max(this.levelStars[this.currentLevelId] || 0, earnedStars);
+      this.levelBestMoves[this.currentLevelId] = Math.min(this.levelBestMoves[this.currentLevelId] || 999, this.moves);
+
       const nextId = this.currentLevelId + 1;
       if (nextId <= CAMPAIGN_LEVELS.length) {
         saveUnlockedLevel(nextId);
@@ -100,6 +137,14 @@ export class GameState {
 
   isLevelCompleted(levelId) {
     return this.completedLevels.includes(levelId);
+  }
+
+  getLevelStars(levelId) {
+    return this.levelStars[levelId] || 0;
+  }
+
+  getLevelBestMoves(levelId) {
+    return this.levelBestMoves[levelId] || null;
   }
 }
 

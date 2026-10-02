@@ -17,7 +17,8 @@ import { solveBFS } from './simulation/solver.js';
 import {
   loadVibrateEnabled,
   saveVibrateEnabled,
-  clearAllGameData
+  clearAllGameData,
+  getTotalStarsEarned
 } from './utils/storage.js';
 
 // DOM Element References
@@ -43,6 +44,18 @@ const elements = {
   currentLevelName: $('currentLevelName'),
   currentLevelMeta: $('currentLevelMeta'),
   wordProgress: $('wordProgress'),
+  moveBudgetGauge: $('moveBudgetGauge'),
+  tier3Chip: $('tier3Chip'),
+  tier3Label: $('tier3Label'),
+  tier2Chip: $('tier2Chip'),
+  tier2Label: $('tier2Label'),
+  tier1Chip: $('tier1Chip'),
+  tier1Label: $('tier1Label'),
+  gaugeFillBar: $('gaugeFillBar'),
+  pinOpt: $('pinOpt'),
+  pinTwo: $('pinTwo'),
+  gaugeTierStatus: $('gaugeTierStatus'),
+  gaugeMovesRem: $('gaugeMovesRem'),
   board: $('board'),
   grid: $('grid'),
   cards: $('cards'),
@@ -72,14 +85,31 @@ const elements = {
   nextBtn: $('solveNext'),
   endBtn: $('solveEnd'),
   victoryOverlay: $('victoryOverlay'),
+  victoryStarsRow: $('victoryStarsRow'),
+  victoryStar1: $('victoryStar1'),
+  victoryStar2: $('victoryStar2'),
+  victoryStar3: $('victoryStar3'),
   victoryTitle: $('victoryTitle'),
   victorySubtitle: $('victorySubtitle'),
   victoryScore: $('victoryScore'),
   victoryMoves: $('victoryMoves'),
+  victoryOptimal: $('victoryOptimal'),
+  victoryRatingPill: $('victoryRatingPill'),
   victoryBest: $('victoryBest'),
   nextLevelBtn: $('nextLevelBtn'),
   replayLevelBtn: $('replayLevelBtn'),
   victoryHomeBtn: $('victoryHomeBtn'),
+  outOfMovesModal: $('outOfMovesModal'),
+  outOfMovesWords: $('outOfMovesWords'),
+  outOfMovesCount: $('outOfMovesCount'),
+  outOfMovesUndoBtn: $('outOfMovesUndoBtn'),
+  outOfMovesRestartBtn: $('outOfMovesRestartBtn'),
+  outOfMovesHomeBtn: $('outOfMovesHomeBtn'),
+  starGoalsTracker: $('starGoalsTracker'),
+  starIcon1: $('starIcon1'),
+  starIcon2: $('starIcon2'),
+  starIcon3: $('starIcon3'),
+  trackerNote: $('trackerNote'),
   soundToggleBtn: $('soundToggleBtn'),
   fullscreenBtn: $('fullscreenBtn'),
   desktopLegend: $('desktopLegend'),
@@ -91,6 +121,7 @@ const elements = {
   homeSettingsBtn: $('homeSettingsBtn'),
   homeFullscreenBtn: $('homeFullscreenBtn'),
   achievementsModal: $('achievementsModal'),
+  statsTotalStars: $('statsTotalStars'),
   statsBestStreak: $('statsBestStreak'),
   statsDailyStreak: $('statsDailyStreak'),
   statsCampaignCleared: $('statsCampaignCleared'),
@@ -146,6 +177,10 @@ const nativeBridge = new NativeBridge({
   closeSettingsSubview: () => uiManager.closeSettingsSubview(),
   isSettingsOpen: () => uiManager.isSettingsOpen(),
   closeSettings: () => closeSettingsScreen(),
+  isOutOfMovesOpen: () => elements.outOfMovesModal && !elements.outOfMovesModal.hidden,
+  closeOutOfMoves: () => {
+    engine.undo();
+  },
   isModalOpen: () => !!uiManager.getActiveModal(),
   closeModal: () => uiManager.closeAllModals(),
   isVictoryOpen: () => elements.victoryOverlay && !elements.victoryOverlay.hidden,
@@ -259,8 +294,9 @@ function goToHomeScreen() {
 
   const heroLevel = CAMPAIGN_LEVELS.find(l => l.id === state.unlockedLevel) || CAMPAIGN_LEVELS[0];
   const isContinue = state.moves > 0 && !state.runCompleted;
-  uiManager.renderCampaignHero(heroLevel, isContinue);
-  uiManager.renderHomeScreen(CAMPAIGN_LEVELS, onSelectLevel, state.currentLevelId, state.completedLevels);
+  const heroStars = state.getLevelStars(heroLevel.id);
+  uiManager.renderCampaignHero(heroLevel, isContinue, heroStars);
+  uiManager.renderHomeScreen(CAMPAIGN_LEVELS, onSelectLevel, state.currentLevelId, state.completedLevels, state.levelStars);
   uiManager.startCountdownTimer(dailyManager);
 }
 
@@ -389,9 +425,33 @@ if (elements.homeAchievementsBtn) {
       dailyStreak: dailyManager.getStreak(),
       completedLevelsCount: state.completedLevels.length,
       totalCampaignLevels: CAMPAIGN_LEVELS.length,
-      totalWords: state.totalWords
+      totalWords: state.totalWords,
+      totalStars: getTotalStarsEarned()
     });
     uiManager.openModal('achievementsModal');
+  });
+}
+
+// Out of Moves Action Handlers
+if (elements.outOfMovesUndoBtn) {
+  elements.outOfMovesUndoBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    engine.undo();
+  });
+}
+
+if (elements.outOfMovesRestartBtn) {
+  elements.outOfMovesRestartBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    engine.startInteractiveRun();
+  });
+}
+
+if (elements.outOfMovesHomeBtn) {
+  elements.outOfMovesHomeBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideOutOfMoves();
+    goToHomeScreen();
   });
 }
 
@@ -722,6 +782,10 @@ new InputManager(elements, {
       const openModal = uiManager.getActiveModal();
       if (openModal) {
         uiManager.closeAllModals();
+        return;
+      }
+      if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) {
+        engine.undo();
         return;
       }
       if (elements.victoryOverlay && !elements.victoryOverlay.hidden) {
