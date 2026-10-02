@@ -68,7 +68,7 @@ export class GameEngine {
     );
 
     this.state.cards.push(...newLetters);
-    this.slotsRenderer.renderSlots(currentWordData.word);
+    this.slotsRenderer.renderSlots(currentWordData.word, false, this.state.cards);
     this.boardRenderer.rebuildCardDOM(this.state.cards, isInitial, isInitial);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 
@@ -142,6 +142,7 @@ export class GameEngine {
     const { newCards, merges } = tryMerge(curWord, this.state.cards);
     if (merges.length === 0) {
       this.state.cards = newCards;
+      this.slotsRenderer.updateBondedSlots(curWord, this.state.cards);
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
 
@@ -186,6 +187,10 @@ export class GameEngine {
   applyMergeAnimation(merges, newCards) {
     if (this.sound) this.sound.playBond();
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('medium');
+
+    const curWord = this.state.level.words[this.state.wordIdx].word;
+    const newlyMergedChs = merges.map(m => m.newCh);
+    this.slotsRenderer.updateBondedSlots(curWord, newCards, newlyMergedChs);
 
     const duration = MERGE_MS;
     merges.forEach(m => {
@@ -362,7 +367,7 @@ export class GameEngine {
 
     const words = this.state.level.words;
     const lv = words[this.state.wordIdx];
-    this.slotsRenderer.renderSlots(lv.word);
+    this.slotsRenderer.renderSlots(lv.word, false, this.state.cards);
     this.boardRenderer.rebuildCardDOM(this.state.cards, true);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 
@@ -397,7 +402,7 @@ export class GameEngine {
 
     const words = this.state.level.words;
     const lv = words[snap.wordIdx] || words[0];
-    this.slotsRenderer.renderSlots(lv.word, snap.isVictory);
+    this.slotsRenderer.renderSlots(lv.word, snap.isVictory, this.state.cards);
     this.boardRenderer.rebuildCardDOM(this.state.cards, !animate);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 

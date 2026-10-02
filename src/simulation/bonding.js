@@ -2,6 +2,44 @@ import { DIRS } from '../config/constants.js';
 import { isCompleted } from './winCondition.js';
 
 /**
+ * Verify whether a collection of tile character strings can partition the target word.
+ * Each tile must be used exactly once and placed in sequential order to form the target word.
+ * @param {string} word
+ * @param {Array<string>} tileStrings
+ * @returns {boolean}
+ */
+export function canPartitionWord(word, tileStrings) {
+  if (tileStrings.length === 0) return word.length === 0;
+
+  let totalLen = 0;
+  for (let i = 0; i < tileStrings.length; i++) {
+    totalLen += tileStrings[i].length;
+  }
+  if (totalLen !== word.length) return false;
+
+  function search(idx, remainingTiles) {
+    if (idx === word.length) {
+      return remainingTiles.length === 0;
+    }
+    const tried = new Set();
+    for (let i = 0; i < remainingTiles.length; i++) {
+      const tile = remainingTiles[i];
+      if (tried.has(tile)) continue;
+      tried.add(tile);
+      if (word.startsWith(tile, idx)) {
+        const nextRemaining = remainingTiles.filter((_, k) => k !== i);
+        if (search(idx + tile.length, nextRemaining)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  return search(0, tileStrings);
+}
+
+/**
  * Merge adjacent active letters for the current target word
  * @param {string} word
  * @param {Array<object>} cards
@@ -37,17 +75,35 @@ export function tryMerge(word, cards) {
         const combo1 = first.ch + second.ch;
         const combo2 = second.ch + first.ch;
 
-        let sIdx, aIdx, newCh;
+        let sIdx = -1;
+        let aIdx = -1;
+        let newCh = null;
 
         if (word.includes(combo1)) {
-          sIdx = firstIdx;
-          aIdx = secondIdx;
-          newCh = combo1;
-        } else if (word.includes(combo2)) {
-          sIdx = secondIdx;
-          aIdx = firstIdx;
-          newCh = combo2;
-        } else {
+          const candidateStrings = cur
+            .filter((c, idx) => !isCompleted(c) && c.ch && idx !== firstIdx && idx !== secondIdx)
+            .map(c => c.ch)
+            .concat(combo1);
+          if (canPartitionWord(word, candidateStrings)) {
+            sIdx = firstIdx;
+            aIdx = secondIdx;
+            newCh = combo1;
+          }
+        }
+
+        if (newCh === null && word.includes(combo2)) {
+          const candidateStrings = cur
+            .filter((c, idx) => !isCompleted(c) && c.ch && idx !== secondIdx && idx !== firstIdx)
+            .map(c => c.ch)
+            .concat(combo2);
+          if (canPartitionWord(word, candidateStrings)) {
+            sIdx = secondIdx;
+            aIdx = firstIdx;
+            newCh = combo2;
+          }
+        }
+
+        if (newCh === null) {
           continue;
         }
 
@@ -79,3 +135,4 @@ export function tryMerge(word, cards) {
 
   return { newCards: cur, merges };
 }
+

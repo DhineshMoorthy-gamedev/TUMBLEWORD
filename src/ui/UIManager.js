@@ -244,10 +244,11 @@ export class UIManager {
    * @param {object} stats
    */
   renderAchievements(stats) {
-    if (this.el.statsTotalStars) this.el.statsTotalStars.textContent = `${stats.totalStars || 0} / 30 ⭐`;
+    const totalLevels = stats.totalCampaignLevels || 100;
+    if (this.el.statsTotalStars) this.el.statsTotalStars.textContent = `${stats.totalStars || 0} / ${totalLevels * 3} ⭐`;
     if (this.el.statsBestStreak) this.el.statsBestStreak.textContent = String(stats.bestStreak || 0);
     if (this.el.statsDailyStreak) this.el.statsDailyStreak.textContent = `${stats.dailyStreak || 0} Days`;
-    if (this.el.statsCampaignCleared) this.el.statsCampaignCleared.textContent = `${stats.completedLevelsCount || 0} / ${stats.totalCampaignLevels || 10}`;
+    if (this.el.statsCampaignCleared) this.el.statsCampaignCleared.textContent = `${stats.completedLevelsCount || 0} / ${totalLevels}`;
     if (this.el.statsTotalWords) this.el.statsTotalWords.textContent = String(stats.totalWords || 0);
   }
 
@@ -260,7 +261,7 @@ export class UIManager {
     this.el.levelsDrawerSection.hidden = shouldHide;
     if (this.el.browseLevelsBtn) {
       this.el.browseLevelsBtn.textContent = shouldHide 
-        ? '☰ Browse All 10 Levels' 
+        ? '☰ Browse All 100 Levels' 
         : '✕ Hide Levels Drawer';
     }
   }

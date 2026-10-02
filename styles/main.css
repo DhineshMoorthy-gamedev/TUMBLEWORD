@@ -50,6 +50,10 @@
   /* Word Slot Target Placeholders */
   --slot-bg: rgba(255, 255, 255, 0.05);
   --slot-border: #2A2D35;
+  --slot-bonded-bg: rgba(56, 189, 248, 0.16);
+  --slot-bonded-border: #38BDF8;
+  --slot-bonded-ink: #38BDF8;
+  --slot-bonded-glow: rgba(56, 189, 248, 0.4);
   --slot-won-bg: #34D399;
   --slot-won-ink: #0D1117;
 
@@ -114,6 +118,10 @@
   /* Word Slot Target Placeholders */
   --slot-bg: rgba(30, 28, 26, 0.05);
   --slot-border: #DFD9CE;
+  --slot-bonded-bg: rgba(43, 93, 125, 0.14);
+  --slot-bonded-border: #2B5D7D;
+  --slot-bonded-ink: #1E3A52;
+  --slot-bonded-glow: rgba(43, 93, 125, 0.3);
   --slot-won-bg: #2D6A4F;
   --slot-won-ink: #FFFFFF;
 
@@ -880,15 +888,16 @@ main {
 
 .word {
   display: flex;
-  gap: 6px;
   align-items: center;
   justify-content: center;
+  gap: 0;
   flex: 1;
   min-height: 38px;
+  overflow: visible;
 }
 
 .slot {
-  width: clamp(34px, 8.5vw, 42px);
+  width: clamp(32px, 8vw, 40px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -899,8 +908,10 @@ main {
   font-weight: 800;
   font-size: clamp(16px, 3.5vw, 20px);
   color: var(--text-dim);
-  transition: background 0.25s, border-color 0.25s, color 0.25s, transform 0.2s;
+  margin: 0 3px;
+  box-sizing: border-box;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .slot.slot-reveal {
@@ -923,12 +934,109 @@ main {
   }
 }
 
+/* Chunk-Fused Physical Capsule Boundaries */
+.slot.chunk-single {
+  border-radius: 8px;
+  margin: 0 3px;
+}
+
+.slot.chunk-start {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-width: 0.5px;
+  margin-right: 0;
+  margin-left: 4px;
+}
+
+.slot.chunk-mid {
+  border-radius: 0;
+  border-left-width: 0.5px;
+  border-right-width: 0.5px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.slot.chunk-end {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-width: 0.5px;
+  margin-left: 0;
+  margin-right: 7px; /* Distinct visual break separating adjacent chunks */
+}
+
+.slot:first-child {
+  margin-left: 2px;
+}
+
+.slot:last-child {
+  margin-right: 2px;
+}
+
+/* Multi-Chunk Alternating Color Themes */
+.slot.chunk-theme-0 {
+  --slot-bonded-bg: rgba(56, 189, 248, 0.16);
+  --slot-bonded-border: #38BDF8;
+  --slot-bonded-ink: #38BDF8;
+  --slot-bonded-glow: rgba(56, 189, 248, 0.4);
+}
+
+.slot.chunk-theme-1 {
+  --slot-bonded-bg: rgba(168, 85, 247, 0.16);
+  --slot-bonded-border: #A855F7;
+  --slot-bonded-ink: #C084FC;
+  --slot-bonded-glow: rgba(168, 85, 247, 0.4);
+}
+
+[data-theme="vellum"] .slot.chunk-theme-0 {
+  --slot-bonded-bg: rgba(43, 93, 125, 0.14);
+  --slot-bonded-border: #2B5D7D;
+  --slot-bonded-ink: #1E3A52;
+  --slot-bonded-glow: rgba(43, 93, 125, 0.3);
+}
+
+[data-theme="vellum"] .slot.chunk-theme-1 {
+  --slot-bonded-bg: rgba(142, 68, 173, 0.14);
+  --slot-bonded-border: #8E44AD;
+  --slot-bonded-ink: #5B2C6F;
+  --slot-bonded-glow: rgba(142, 68, 173, 0.3);
+}
+
+.slot.bonded {
+  background: var(--slot-bonded-bg);
+  border-color: var(--slot-bonded-border);
+  color: var(--slot-bonded-ink);
+  box-shadow: 0 0 10px var(--slot-bonded-glow), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+
+.slot.merge-pop {
+  animation: slotMergePop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 2;
+}
+
+@keyframes slotMergePop {
+  0% {
+    transform: scale(0.92);
+    filter: brightness(1.5);
+  }
+  45% {
+    transform: scale(1.18);
+    box-shadow: 0 0 20px var(--slot-bonded-glow, var(--accent-primary-glow)), inset 0 0 8px rgba(255, 255, 255, 0.6);
+    filter: brightness(1.8);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
 .slot.won {
   background: var(--slot-won-bg);
   border-color: var(--slot-won-bg);
   color: var(--slot-won-ink);
   box-shadow: 0 0 14px var(--accent-primary-glow);
   transform: scale(1.04);
+  border-radius: 8px;
+  margin: 0 3px;
 }
 
 /* HERO STAGE & BOARD */
@@ -1088,30 +1196,34 @@ main {
 }
 
 .face[data-len="2"] {
-  font-size: calc(100cqw / var(--n) * 0.38);
-  letter-spacing: -0.03em;
+  font-size: calc(100cqw / var(--n) * 0.36);
+  letter-spacing: -0.02em;
 }
 
 .face[data-len="3"] {
-  font-size: calc(100cqw / var(--n) * 0.28);
-  letter-spacing: -0.05em;
+  font-size: calc(100cqw / var(--n) * 0.26);
+  letter-spacing: -0.04em;
 }
 
 .face[data-len="4"] {
-  font-size: calc(100cqw / var(--n) * 0.22);
-  letter-spacing: -0.06em;
+  font-size: calc(100cqw / var(--n) * 0.20);
+  letter-spacing: -0.05em;
 }
 
 .face[data-len="5"] {
-  font-size: calc(100cqw / var(--n) * 0.18);
-  letter-spacing: -0.07em;
+  font-size: calc(100cqw / var(--n) * 0.165);
+  letter-spacing: -0.06em;
 }
 
-.face[data-len="6"],
+.face[data-len="6"] {
+  font-size: calc(100cqw / var(--n) * 0.14);
+  letter-spacing: -0.06em;
+}
+
 .face[data-len="7"],
 .face[data-len="8"] {
-  font-size: calc(100cqw / var(--n) * 0.15);
-  letter-spacing: -0.08em;
+  font-size: calc(100cqw / var(--n) * 0.12);
+  letter-spacing: -0.07em;
 }
 
 .face.bonding {
@@ -1147,7 +1259,7 @@ main {
   font-weight: 800;
   position: relative;
   overflow: visible;
-  padding: 2px 4px;
+  padding: 1px 2px;
   box-sizing: border-box;
 }
 
@@ -1163,37 +1275,40 @@ main {
 }
 
 .face.completed[data-len="2"] {
-  font-size: calc(100cqw / var(--n) * 0.38);
+  font-size: calc(100cqw / var(--n) * 0.36);
   letter-spacing: -0.02em;
 }
 
 .face.completed[data-len="3"] {
-  font-size: calc(100cqw / var(--n) * 0.32);
+  font-size: calc(100cqw / var(--n) * 0.26);
   letter-spacing: -0.03em;
 }
 
 .face.completed[data-len="4"] {
-  font-size: calc(100cqw / var(--n) * 0.25);
+  font-size: calc(100cqw / var(--n) * 0.20);
   letter-spacing: -0.04em;
 }
 
 .face.completed[data-len="5"] {
-  font-size: calc(100cqw / var(--n) * 0.20);
+  font-size: calc(100cqw / var(--n) * 0.165);
   letter-spacing: -0.05em;
 }
 
-.face.completed[data-len="6"],
+.face.completed[data-len="6"] {
+  font-size: calc(100cqw / var(--n) * 0.14);
+  letter-spacing: -0.06em;
+}
+
 .face.completed[data-len="7"],
 .face.completed[data-len="8"] {
-  font-size: calc(100cqw / var(--n) * 0.16);
-  letter-spacing: -0.06em;
+  font-size: calc(100cqw / var(--n) * 0.12);
+  letter-spacing: -0.07em;
 }
 
 .face.completed .label {
   display: block;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
   white-space: nowrap;
   line-height: 1;
   text-align: center;
