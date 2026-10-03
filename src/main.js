@@ -15,6 +15,12 @@ import { initTheme, toggleTheme, applyTheme, getSavedTheme } from './utils/theme
 import { dailyManager } from './simulation/dailyManager.js';
 import { solveBFS } from './simulation/solver.js';
 import {
+  simulateEndlessSeed,
+  runBatchSeedBenchmark,
+  buildEndlessTimelineSnapshots
+} from './simulation/endlessSimulator.js';
+import { getEndlessWalls } from './data/endlessWalls.js';
+import {
   loadVibrateEnabled,
   saveVibrateEnabled,
   clearAllGameData,
@@ -36,14 +42,34 @@ const elements = {
   dailyCountdownText: $('dailyCountdownText'),
   dailyCalendarBtn: $('dailyCalendarBtn'),
   dailyPlayBtn: $('dailyPlayBtn'),
+  endlessModeCard: $('endlessModeCard'),
+  endlessStreakBadge: $('endlessStreakBadge'),
+  endlessBestStreakVal: $('endlessBestStreakVal'),
+  endlessPlayBtn: $('endlessPlayBtn'),
+  endlessBenchmarkBox: $('endlessBenchmarkBox'),
+  benchmarkSeedInput: $('benchmarkSeedInput'),
+  runSingleSeedBtn: $('runSingleSeedBtn'),
+  runBatchSeedsBtn: $('runBatchSeedsBtn'),
+  previewEndlessVictoryBtn: $('previewEndlessVictoryBtn'),
+  bmMaxStreak: $('bmMaxStreak'),
+  bmTotalMoves: $('bmTotalMoves'),
+  bmAvgMoves: $('bmAvgMoves'),
+  benchmarkLog: $('benchmarkLog'),
   heroEyebrow: $('heroEyebrow'),
   heroLevelTitle: $('heroLevelTitle'),
   heroLevelSub: $('heroLevelSub'),
   heroPlayBtn: $('heroPlayBtn'),
   backToLevelsBtn: $('backToLevelsBtn'),
   currentLevelName: $('currentLevelName'),
+  currentSeedBadge: $('currentSeedBadge'),
   currentLevelMeta: $('currentLevelMeta'),
+  emptyCellsBadge: $('emptyCellsBadge'),
+  emptyCellsCount: $('emptyCellsCount'),
   wordProgress: $('wordProgress'),
+  wordProgressLabel: $('wordProgressLabel'),
+  wordProgressPill: $('wordProgressPill'),
+  movesLabel: $('movesLabel'),
+  movesPill: $('movesPill'),
   moveBudgetGauge: $('moveBudgetGauge'),
   tier3Chip: $('tier3Chip'),
   tier3Label: $('tier3Label'),
@@ -264,6 +290,32 @@ const timelineController = new TimelineController(elements, {
 });
 
 function loadLevelTimeline(level) {
+  if (state.isEndless || (level && level.isEndless)) {
+    const seed = state.endlessSeed || (level && level.seed) || 42;
+    const res = simulateEndlessSeed(seed, 100);
+    const endlessTl = buildEndlessTimelineSnapshots(seed, Math.min(100, Math.max(1, res.streak)));
+    if (endlessTl.timeline.length > 0) {
+      state.isEndless = true;
+      state.endlessSeed = seed;
+      state.level = {
+        id: '∞',
+        name: "Endless Arcade",
+        isEndless: true,
+        seed,
+        n: 6,
+        walls: getEndlessWalls(seed),
+        words: endlessTl.words
+      };
+      boardRenderer.initGrid(state.level.n, state.level.walls);
+      fullTimeline = endlessTl.timeline;
+      totalTimelineMoves = endlessTl.totalMoves;
+      timelineController.loadTimeline(fullTimeline, totalTimelineMoves);
+      engine.applyTimelineSnapshot(fullTimeline[0], false);
+      timelineController.setStep(0);
+    }
+    return;
+  }
+
   const res = generateMoveTimeline(level);
   fullTimeline = res.timeline;
   totalTimelineMoves = res.totalMoves;
@@ -298,6 +350,12 @@ function goToHomeScreen() {
   uiManager.renderCampaignHero(heroLevel, isContinue, heroStars);
   uiManager.renderHomeScreen(CAMPAIGN_LEVELS, onSelectLevel, state.currentLevelId, state.completedLevels, state.levelStars);
   uiManager.startCountdownTimer(dailyManager);
+
+  // Update Endless Arcade best streak
+  const bestEndless = localStorage.getItem('tumbleword_endless_best') || '0';
+  if (elements.endlessBestStreakVal) {
+    elements.endlessBestStreakVal.textContent = bestEndless;
+  }
 }
 
 function onSelectLevel(levelId) {
@@ -318,14 +376,20 @@ function setAppMode(mode) {
     if (elements.editorModeBtn) elements.editorModeBtn.classList.remove('active');
     if (elements.turnrow) elements.turnrow.style.display = 'flex';
     if (elements.solverBox) elements.solverBox.style.display = 'none';
+    if (elements.endlessBenchmarkBox) elements.endlessBenchmarkBox.style.display = 'none';
     if (state.screen === 'game') {
-      engine.startLevel(state.level);
+      if (state.isEndless) {
+        engine.startEndlessMode(state.endlessSeed || Date.now());
+      } else {
+        engine.startLevel(state.level);
+      }
     }
   } else {
     if (elements.playModeBtn) elements.playModeBtn.classList.remove('active');
     if (elements.editorModeBtn) elements.editorModeBtn.classList.add('active');
     if (elements.turnrow) elements.turnrow.style.display = 'none';
     if (elements.solverBox) elements.solverBox.style.display = 'flex';
+    if (elements.endlessBenchmarkBox) elements.endlessBenchmarkBox.style.display = 'flex';
 
     if (state.screen === 'game') {
       boardRenderer.initGrid(state.n, state.walls);
@@ -382,6 +446,11 @@ if (elements.backToLevelsBtn) {
 if (elements.nextLevelBtn) {
   elements.nextLevelBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    if (state.isEndless || (state.level && state.level.isEndless)) {
+      const seed = Math.floor(1000 + Math.random() * 90000);
+      engine.startEndlessMode(seed);
+      return;
+    }
     if (state.level && state.level.isDaily) {
       goToHomeScreen();
       return;
@@ -396,6 +465,11 @@ if (elements.nextLevelBtn) {
 if (elements.replayLevelBtn) {
   elements.replayLevelBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    if (state.isEndless || (state.level && state.level.isEndless)) {
+      const seed = state.endlessSeed || Math.floor(1000 + Math.random() * 90000);
+      engine.startEndlessMode(seed);
+      return;
+    }
     startLevel(state.level);
   });
 }
@@ -404,6 +478,98 @@ if (elements.victoryHomeBtn) {
   elements.victoryHomeBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
     goToHomeScreen();
+  });
+}
+
+// Endless Mode Play Launch
+if (elements.endlessPlayBtn) {
+  elements.endlessPlayBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    state.screen = 'game';
+    const seed = Math.floor(1000 + Math.random() * 90000);
+    engine.startEndlessMode(seed);
+  });
+}
+
+// Editor Mode Seed Benchmark Controls
+if (elements.runSingleSeedBtn) {
+  elements.runSingleSeedBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    const seed = parseInt(elements.benchmarkSeedInput ? elements.benchmarkSeedInput.value : '42', 10) || 42;
+    if (elements.benchmarkLog) elements.benchmarkLog.textContent = `Simulating Seed #${seed}...`;
+
+    setTimeout(() => {
+      const res = simulateEndlessSeed(seed, 100);
+      if (elements.bmMaxStreak) elements.bmMaxStreak.textContent = `${res.streak}w`;
+      if (elements.bmTotalMoves) elements.bmTotalMoves.textContent = `${res.totalMoves}`;
+      if (elements.bmAvgMoves) elements.bmAvgMoves.textContent = `${res.avgMoves}`;
+      if (elements.benchmarkLog) {
+        elements.benchmarkLog.innerHTML = `<strong>Seed #${seed}:</strong> Reached streak of <b>${res.streak} words</b> in ${res.totalMoves} moves (avg ${res.avgMoves} m/w).<br><span style="opacity:0.85;">${res.reason}</span>`;
+      }
+
+      // Load into timeline controller so developer can step through move-by-move
+      const endlessTl = buildEndlessTimelineSnapshots(seed, Math.min(100, Math.max(1, res.streak)));
+      if (endlessTl.timeline.length > 0) {
+        state.isEndless = true;
+        state.endlessSeed = seed;
+        state.level = {
+          id: '∞',
+          name: "Endless Arcade",
+          isEndless: true,
+          seed,
+          n: 6,
+          walls: getEndlessWalls(seed),
+          words: endlessTl.words
+        };
+        boardRenderer.initGrid(state.level.n, state.level.walls);
+        fullTimeline = endlessTl.timeline;
+        totalTimelineMoves = endlessTl.totalMoves;
+        timelineController.loadTimeline(fullTimeline, totalTimelineMoves);
+        engine.applyTimelineSnapshot(fullTimeline[0], false);
+        timelineController.setStep(0);
+      }
+    }, 10);
+  });
+}
+
+if (elements.runBatchSeedsBtn) {
+  elements.runBatchSeedsBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    if (elements.benchmarkLog) elements.benchmarkLog.textContent = `Running Monte Carlo benchmark on Seeds 1 to 25...`;
+
+    setTimeout(() => {
+      const batch = runBatchSeedBenchmark(1, 25, 100);
+      if (elements.bmMaxStreak) elements.bmMaxStreak.textContent = `Avg ${batch.avgStreak}w`;
+      if (elements.bmTotalMoves) elements.bmTotalMoves.textContent = `Max ${batch.maxStreak}w`;
+      if (elements.bmAvgMoves) elements.bmAvgMoves.textContent = `Min ${batch.minStreak}w`;
+
+      const sample = batch.results.slice(0, 12).map(r => `Seed #${r.seed}: ${r.streak}w`).join(' • ');
+      if (elements.benchmarkLog) {
+        elements.benchmarkLog.innerHTML = `<strong>Batch (Seeds 1–25):</strong> Avg <b>${batch.avgStreak}w</b> | Max <b>${batch.maxStreak}w</b> (Seed #${batch.maxSeed}) | Min <b>${batch.minStreak}w</b> (Seed #${batch.minSeed}).<br><span style="font-size:9.5px; opacity:0.8;">${sample}...</span>`;
+      }
+    }, 10);
+  });
+}
+
+// Preview Endless Mode Full Victory Screen (Editor Mode tool)
+if (elements.previewEndlessVictoryBtn) {
+  elements.previewEndlessVictoryBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playVictory();
+    if (nativeBridge) nativeBridge.triggerHaptic('success');
+    const seed = parseInt(elements.benchmarkSeedInput ? elements.benchmarkSeedInput.value : '42', 10) || 42;
+    uiManager.showVictory(
+      state.moves > 0 ? state.moves : 542,
+      1200,
+      {
+        name: 'Endless Arcade',
+        isEndless: true,
+        seed,
+        totalWords: 1200,
+        difficultyScore: 9999
+      },
+      3,
+      soundFX
+    );
   });
 }
 
@@ -699,6 +865,7 @@ if (!TargetConfig.features.enableFullscreenAPI) {
 if (!TargetConfig.features.showEditorToggle) {
   if (elements.modeToggleBar) elements.modeToggleBar.style.display = 'none';
   if (elements.solverBox) elements.solverBox.style.display = 'none';
+  if (elements.endlessBenchmarkBox) elements.endlessBenchmarkBox.style.display = 'none';
 }
 
 function giveHint() {

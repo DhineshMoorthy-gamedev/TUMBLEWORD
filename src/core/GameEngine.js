@@ -7,6 +7,8 @@ import { settle } from '../simulation/physics.js';
 import { tryMerge } from '../simulation/bonding.js';
 import { findWin, isCompleted } from '../simulation/winCondition.js';
 import { createWordCards } from '../levels/spawnSystem.js';
+import { createPRNG, getSeededWord, createEndlessWordDeck, ALL_DICTIONARY_WORDS } from '../data/wordDictionary.js';
+import { getEndlessWalls } from '../data/endlessWalls.js';
 
 export class GameEngine {
   /**
@@ -25,6 +27,47 @@ export class GameEngine {
     this.sound = sound;
     this.nativeBridge = nativeBridge;
     this.nextCardId = 1;
+    this._queuedTurn = null;
+  }
+
+  /**
+   * Start Endless Arcade Mode with seeded procedural words
+   * @param {number} [seed]
+   */
+  startEndlessMode(seed = Math.floor(1000 + Math.random() * 90000)) {
+    const prng = createPRNG(seed);
+    const wordDeck = createEndlessWordDeck(prng);
+    const firstWord = wordDeck.getNextWord(0);
+    const walls = getEndlessWalls(seed);
+
+    const endlessLevel = {
+      id: '∞',
+      name: "Endless Arcade",
+      isEndless: true,
+      seed,
+      n: 6,
+      walls,
+      words: [{ word: firstWord, cards: [] }]
+    };
+
+    this.state.isEndless = true;
+    this.state.endlessSeed = seed;
+    this.state.endlessPRNG = prng;
+    this.state.endlessWordDeck = wordDeck;
+    this.state.setLevel(endlessLevel);
+
+    this.nextCardId = 1;
+    this._queuedTurn = null;
+    this.uiManager.hideVictory();
+    this.uiManager.hideOutOfMoves();
+
+    if (this.sound) this.sound.playLevelStart();
+    if (this.nativeBridge) this.nativeBridge.triggerHaptic('light');
+
+    this.uiManager.showGameScreen();
+    this.uiManager.updateLevelHeader(endlessLevel);
+    this.boardRenderer.initGrid(this.state.n, this.state.walls);
+    this.spawnCurrentWord(true);
   }
 
   /**
@@ -32,6 +75,7 @@ export class GameEngine {
    * @param {number} levelId
    */
   startLevel(levelId) {
+    this.state.isEndless = false;
     this.state.setLevel(levelId);
     this.nextCardId = 1;
     this.uiManager.hideVictory();
@@ -46,7 +90,11 @@ export class GameEngine {
    * Restart the current active level
    */
   startInteractiveRun() {
-    this.startLevel(this.state.currentLevelId);
+    if (this.state.isEndless) {
+      this.startEndlessMode(this.state.endlessSeed || Date.now());
+    } else {
+      this.startLevel(this.state.currentLevelId);
+    }
   }
 
   /**
@@ -64,7 +112,9 @@ export class GameEngine {
       () => this.nextCardId++,
       isInitial,
       this.state.n,
-      this.state.walls
+      this.state.walls,
+      this.state.endlessPRNG,
+      this.state.r
     );
 
     this.state.cards.push(...newLetters);
@@ -74,7 +124,11 @@ export class GameEngine {
 
     // Force reflow to commit initial placement, then re-enable smooth sliding transitions
     void this.boardRenderer.cardsEl.offsetWidth;
-    this.boardRenderer.enableCardTransitions();
+    if (isInitial) {
+      setTimeout(() => this.boardRenderer.enableCardTransitions(), 480);
+    } else {
+      this.boardRenderer.enableCardTransitions();
+    }
 
     this.uiManager.updateStats(this.state);
     if (isInitial) {
@@ -165,6 +219,7 @@ export class GameEngine {
    * @returns {boolean}
    */
   checkOutOfMoves() {
+    if (this.state.isEndless || (this.state.level && this.state.level.isEndless)) return false;
     if (this.state.runCompleted || this.state.mode !== 'play') return false;
 
     const maxMoves = this.state.getMaxMoves();
@@ -305,6 +360,62 @@ export class GameEngine {
       this.state.incrementStreak();
       this.uiManager.updateStats(this.state);
 
+      if (this.state.isEndless) {
+        // Save best streak
+        const best = parseInt(localStorage.getItem('tumbleword_endless_best') || '0', 10);
+        if (this.state.streak > best) {
+          localStorage.setItem('tumbleword_endless_best', String(this.state.streak));
+        }
+
+        // Check if player has conquered the entire Endless Arcade word dictionary!
+        if (this.state.streak >= ALL_DICTIONARY_WORDS.length) {
+          this.state.runCompleted = true;
+          if (this.sound) this.sound.playVictory();
+          if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
+          this.uiManager.showVictory(
+            this.state.moves,
+            this.state.streak,
+            {
+              ...this.state.level,
+              name: 'Endless Arcade',
+              isEndless: true,
+              totalWords: ALL_DICTIONARY_WORDS.length,
+              difficultyScore: 9999
+            },
+            3,
+            this.sound
+          );
+          this.uiManager.setStatus(
+            `🏆 <strong>LEGENDARY CONQUEST!</strong> You completed all ${ALL_DICTIONARY_WORDS.length} words in Endless Arcade Mode!`
+          );
+          this.uiManager.updateStats(this.state);
+          return;
+        }
+
+        // Generate next non-repeating seeded word
+        const nextWord = this.state.endlessWordDeck
+          ? this.state.endlessWordDeck.getNextWord(this.state.wordIdx + 1)
+          : getSeededWord(this.state.endlessPRNG, this.state.wordIdx + 1);
+        this.state.level.words.push({ word: nextWord });
+
+        if (this.sound) this.sound.playWordComplete();
+        if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
+
+        const expireNote =
+          expiredIds.length > 0 ? ' (An old word dissolved!)' : '';
+        this.uiManager.setStatus(
+          `<strong>${currentWord}</strong> formed! Streak <strong>${this.state.streak}</strong>!${expireNote} Next word incoming...`
+        );
+
+        setTimeout(() => {
+          this.state.wordIdx++;
+          this.spawnCurrentWord(false);
+          this.state.locked = false;
+          this.uiManager.updateStats(this.state);
+        }, 600);
+        return;
+      }
+
       const words = this.state.level.words;
       if (this.state.wordIdx === words.length - 1) {
         this.state.runCompleted = true;
@@ -400,9 +511,10 @@ export class GameEngine {
     this.state.locked = false;
     this.state.runCompleted = !!snap.isVictory;
 
-    const words = this.state.level.words;
-    const lv = words[snap.wordIdx] || words[0];
-    this.slotsRenderer.renderSlots(lv.word, snap.isVictory, this.state.cards);
+    const words = this.state.level ? this.state.level.words : [];
+    const lv = words && words[snap.wordIdx] ? words[snap.wordIdx] : words[0];
+    const targetWord = snap.word || (lv && lv.word) || '';
+    this.slotsRenderer.renderSlots(targetWord, snap.isVictory, this.state.cards);
     this.boardRenderer.rebuildCardDOM(this.state.cards, !animate);
     this.boardRenderer.render(this.state.cards, this.state.angle);
 

@@ -327,11 +327,20 @@ export class UIManager {
    */
   updateLevelHeader(level) {
     if (this.el.currentLevelName) {
-      if (level && level.isDaily) {
+      if (level && level.isEndless) {
+        this.el.currentLevelName.textContent = 'ENDLESS ARCADE';
+        if (this.el.currentSeedBadge) {
+          const seed = level.seed !== undefined ? level.seed : '';
+          this.el.currentSeedBadge.textContent = `SEED #${seed}`;
+          this.el.currentSeedBadge.style.display = 'inline-block';
+        }
+      } else if (level && level.isDaily) {
         this.el.currentLevelName.textContent = 'DAILY PUZZLE';
+        if (this.el.currentSeedBadge) this.el.currentSeedBadge.style.display = 'none';
       } else {
         const id = level ? level.id : 1;
         this.el.currentLevelName.textContent = `LEVEL ${id}`;
+        if (this.el.currentSeedBadge) this.el.currentSeedBadge.style.display = 'none';
       }
       this.el.currentLevelName.classList.remove('level-title-enter');
       void this.el.currentLevelName.offsetWidth;
@@ -345,6 +354,7 @@ export class UIManager {
    * @param {boolean} isPlayingTimeline
    */
   updateStats(gameState, isPlayingTimeline = false) {
+    const isEndless = gameState.isEndless || (gameState.level && gameState.level.isEndless);
     const totalWords = gameState.level ? gameState.level.words.length : 3;
     const currentWordNum = Math.min(gameState.wordIdx + 1, totalWords);
     const optimal = gameState.getOptimalMoves ? gameState.getOptimalMoves() : 10;
@@ -354,39 +364,72 @@ export class UIManager {
     const remMoves = Math.max(0, maxMoves - moves);
     const currentStars = gameState.getCurrentStars ? gameState.getCurrentStars() : 3;
 
-    if (this.el.wordProgress) {
-      this.el.wordProgress.textContent = `${currentWordNum}/${totalWords}`;
+    if (isEndless) {
+      if (this.el.wordProgressLabel) this.el.wordProgressLabel.textContent = 'STREAK';
+      if (this.el.wordProgress) this.el.wordProgress.textContent = `🔥 ${gameState.streak}`;
+
+      const bestEndless = parseInt(localStorage.getItem('tumbleword_endless_best') || '0', 10);
+      if (this.el.movesLabel) this.el.movesLabel.textContent = 'BEST';
+      if (this.el.moves) this.el.moves.textContent = `🏆 ${Math.max(bestEndless, gameState.streak)}`;
+
+      if (this.el.starGoalsTracker) {
+        this.el.starGoalsTracker.style.display = 'none';
+      }
+    } else {
+      if (this.el.wordProgressLabel) this.el.wordProgressLabel.textContent = 'WORD';
+      if (this.el.wordProgress) this.el.wordProgress.textContent = `${currentWordNum}/${totalWords}`;
+
+      if (this.el.movesLabel) this.el.movesLabel.textContent = 'MOVES';
+      if (this.el.moves) this.el.moves.textContent = `${moves}/${maxMoves}`;
+
+      if (this.el.starGoalsTracker) {
+        this.el.starGoalsTracker.style.display = 'flex';
+      }
+
+      // Update Minimalist Star Icons Active Glow
+      if (this.el.starIcon1) this.el.starIcon1.classList.toggle('active', currentStars >= 1);
+      if (this.el.starIcon2) this.el.starIcon2.classList.toggle('active', currentStars >= 2);
+      if (this.el.starIcon3) this.el.starIcon3.classList.toggle('active', currentStars >= 3);
+
+      // Update Minimal Context Goal Label
+      if (this.el.trackerNote) {
+        if (moves < optimal) {
+          const diff = optimal - moves;
+          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 3 Stars`;
+        } else if (moves === optimal) {
+          this.el.trackerNote.textContent = 'Last move for 3 Stars!';
+        } else if (moves < twoStarLimit) {
+          const diff = twoStarLimit - moves;
+          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 2 Stars`;
+        } else if (moves === twoStarLimit) {
+          this.el.trackerNote.textContent = 'Last move for 2 Stars!';
+        } else if (moves < maxMoves) {
+          const diff = maxMoves - moves;
+          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 1 Star`;
+        } else if (moves === maxMoves) {
+          this.el.trackerNote.textContent = 'Final move to clear level!';
+        } else {
+          this.el.trackerNote.textContent = 'Out of moves';
+        }
+      }
     }
-    if (this.el.moves) {
-      this.el.moves.textContent = `${moves}/${maxMoves}`;
-    }
+
     if (this.el.streak) this.el.streak.textContent = String(gameState.streak);
     if (this.el.bestStreak) this.el.bestStreak.textContent = String(gameState.bestStreak);
 
-    // Update Minimalist Star Icons Active Glow
-    if (this.el.starIcon1) this.el.starIcon1.classList.toggle('active', currentStars >= 1);
-    if (this.el.starIcon2) this.el.starIcon2.classList.toggle('active', currentStars >= 2);
-    if (this.el.starIcon3) this.el.starIcon3.classList.toggle('active', currentStars >= 3);
-
-    // Update Minimal Context Goal Label (Clear, plain English phrasing)
-    if (this.el.trackerNote) {
-      if (moves < optimal) {
-        const diff = optimal - moves;
-        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 3 Stars`;
-      } else if (moves === optimal) {
-        this.el.trackerNote.textContent = 'Last move for 3 Stars!';
-      } else if (moves < twoStarLimit) {
-        const diff = twoStarLimit - moves;
-        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 2 Stars`;
-      } else if (moves === twoStarLimit) {
-        this.el.trackerNote.textContent = 'Last move for 2 Stars!';
-      } else if (moves < maxMoves) {
-        const diff = maxMoves - moves;
-        this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 1 Star`;
-      } else if (moves === maxMoves) {
-        this.el.trackerNote.textContent = 'Final move to clear level!';
-      } else {
-        this.el.trackerNote.textContent = 'Out of moves';
+    // Update Live Empty / Total Floor Cells Counter
+    if (this.el.emptyCellsCount) {
+      const emptyCount = gameState.getEmptyCellsCount ? gameState.getEmptyCellsCount() : 0;
+      const totalFloor = gameState.getTotalFloorCells ? gameState.getTotalFloorCells() : 25;
+      const prevVal = this.el.emptyCellsCount.textContent;
+      const newValStr = `${emptyCount}/${totalFloor}`;
+      if (prevVal !== newValStr) {
+        this.el.emptyCellsCount.textContent = newValStr;
+        if (this.el.emptyCellsBadge) {
+          this.el.emptyCellsBadge.classList.remove('count-pop');
+          void this.el.emptyCellsBadge.offsetWidth;
+          this.el.emptyCellsBadge.classList.add('count-pop');
+        }
       }
     }
 
@@ -568,24 +611,48 @@ export class UIManager {
     if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = String(optimal);
 
     if (level) {
-      if (this.el.victoryTitle) {
-        this.el.victoryTitle.textContent = `${level.name} Cleared!`;
-      }
-      if (this.el.victorySubtitle) {
-        this.el.victorySubtitle.textContent = `All ${level.words.length} words spelled on ${level.n}×${level.n} grid!`;
-      }
-      if (this.el.victoryScore) {
-        this.el.victoryScore.textContent = `Score: ${level.difficultyScore}`;
-      }
-    }
-
-    if (this.el.victoryRatingPill) {
-      if (earnedStars === 3) {
-        this.el.victoryRatingPill.textContent = '⭐⭐⭐ FLAWLESS / OPTIMAL';
-      } else if (earnedStars === 2) {
-        this.el.victoryRatingPill.textContent = '⭐⭐ SKILLED SOLVER';
+      if (level.isEndless) {
+        if (this.el.victoryTitle) {
+          this.el.victoryTitle.textContent = 'Endless Mode Conquered! 🏆';
+        }
+        if (this.el.victorySubtitle) {
+          const totalWordsCount = level.totalWords || 1200;
+          this.el.victorySubtitle.textContent = `Incredible mastery! You completed all ${totalWordsCount} words across all 8 tiers!`;
+        }
+        if (this.el.victoryScore) {
+          this.el.victoryScore.textContent = `Streak: ${bestStreak || 1200} 🔥`;
+        }
+        if (this.el.victoryOptimal) {
+          this.el.victoryOptimal.textContent = 'All 8 Tiers';
+        }
+        if (this.el.victoryRatingPill) {
+          this.el.victoryRatingPill.textContent = '👑 COSMIC GRAND MASTER';
+        }
+        if (this.el.nextLevelBtn) {
+          this.el.nextLevelBtn.innerHTML = `Play New Seed <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        }
       } else {
-        this.el.victoryRatingPill.textContent = '⭐ LEVEL CLEARED';
+        if (this.el.victoryTitle) {
+          this.el.victoryTitle.textContent = `${level.name} Cleared!`;
+        }
+        if (this.el.victorySubtitle) {
+          this.el.victorySubtitle.textContent = `All ${level.words.length} words spelled on ${level.n}×${level.n} grid!`;
+        }
+        if (this.el.victoryScore) {
+          this.el.victoryScore.textContent = `Score: ${level.difficultyScore}`;
+        }
+        if (this.el.victoryRatingPill) {
+          if (earnedStars === 3) {
+            this.el.victoryRatingPill.textContent = '⭐⭐⭐ FLAWLESS / OPTIMAL';
+          } else if (earnedStars === 2) {
+            this.el.victoryRatingPill.textContent = '⭐⭐ SKILLED SOLVER';
+          } else {
+            this.el.victoryRatingPill.textContent = '⭐ LEVEL CLEARED';
+          }
+        }
+        if (this.el.nextLevelBtn) {
+          this.el.nextLevelBtn.innerHTML = `Next Level <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        }
       }
     }
 

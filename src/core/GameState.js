@@ -76,6 +76,9 @@ export class GameState {
   }
 
   getMaxMoves() {
+    if (this.isEndless || (this.level && this.level.isEndless)) {
+      return Infinity;
+    }
     return calculateMoveBudget(this.getOptimalMoves());
   }
 
@@ -89,6 +92,26 @@ export class GameState {
 
   getMovesRemaining() {
     return Math.max(0, this.getMaxMoves() - this.moves);
+  }
+
+  getTotalFloorCells() {
+    const n = this.n || (this.level && this.level.n) || 5;
+    const walls = this.walls || (this.level && this.level.walls) || [];
+    let wallCount = 0;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        if (walls[y] && walls[y][x] === '#') {
+          wallCount++;
+        }
+      }
+    }
+    return Math.max(1, (n * n) - wallCount);
+  }
+
+  getEmptyCellsCount() {
+    const totalFloor = this.getTotalFloorCells();
+    const occupied = this.cards ? this.cards.length : 0;
+    return Math.max(0, totalFloor - occupied);
   }
 
   recordHistory(dir) {
