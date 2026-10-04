@@ -203,6 +203,20 @@ export function saveReminderEnabled(enabled) {
   } catch (e) {}
 }
 
+export function isAdsRemoved() {
+  try {
+    return localStorage.getItem('rotatle_ads_removed') === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+export function setAdsRemoved(removed = true) {
+  try {
+    localStorage.setItem('rotatle_ads_removed', String(Boolean(removed)));
+  } catch (e) {}
+}
+
 export function clearAllGameData() {
   try {
     localStorage.removeItem(BEST_STREAK_KEY);
@@ -211,6 +225,7 @@ export function clearAllGameData() {
     localStorage.removeItem(TOTAL_WORDS_KEY);
     localStorage.removeItem(LEVEL_STARS_KEY);
     localStorage.removeItem(LEVEL_BEST_MOVES_KEY);
+    localStorage.removeItem('rotatle_ads_removed');
     localStorage.removeItem('rotatle_daily_data');
     localStorage.removeItem('rotatle_endless_best');
     // Also clean up any legacy tumbleword keys if present
@@ -224,4 +239,5 @@ export function clearAllGameData() {
     localStorage.removeItem('tumbleword_endless_best');
   } catch (e) {}
 }
+
 

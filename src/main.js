@@ -23,6 +23,7 @@ import { getEndlessWalls } from './data/endlessWalls.js';
 import { TutorialManager } from './tutorial/tutorialManager.js';
 import { notificationManager } from './platform/notificationManager.js';
 import { appUpdateManager } from './platform/appUpdateManager.js';
+import { inAppPurchaseManager } from './platform/inAppPurchaseManager.js';
 import {
   loadVibrateEnabled,
   saveVibrateEnabled,
@@ -817,9 +818,26 @@ if (elements.settingsReminderToggle) {
 }
 
 if (elements.settingsRemoveAdsBtn) {
-  elements.settingsRemoveAdsBtn.addEventListener('click', () => {
+  elements.settingsRemoveAdsBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
-    alert('You have the complete ad-free premium version of Rotatle!');
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+
+    if (inAppPurchaseManager.isAdsRemoved()) {
+      uiManager.showToast('You already own the ad-free version!');
+      return;
+    }
+
+    const result = await inAppPurchaseManager.purchaseRemoveAds();
+
+    if (result.success) {
+      uiManager.updateRemoveAdsButton(true);
+      if (nativeBridge) nativeBridge.triggerHaptic('success');
+      uiManager.showToast('Ad-free version unlocked! Thank you!');
+    } else if (result.cancelled) {
+      // User cancelled, no error message needed
+    } else if (result.error) {
+      uiManager.showToast('Purchase could not be completed.');
+    }
   });
 }
 
@@ -887,11 +905,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.6)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.8)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.6)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.8)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);
@@ -1240,6 +1258,14 @@ new InputManager(elements, {
 
 // Boot into Home Screen with 3-tier Grid Leap Hub Layout
 goToHomeScreen();
+
+// Initialize In-App Purchases & sync button state
+inAppPurchaseManager.init().then(() => {
+  uiManager.updateRemoveAdsButton(inAppPurchaseManager.isAdsRemoved());
+}).catch(err => {
+  console.warn('IAP init error:', err);
+});
+uiManager.updateRemoveAdsButton(inAppPurchaseManager.isAdsRemoved());
 
 // If editor target mode is enabled, auto open editor solver tools
 if (TargetConfig.features.autoOpenEditor) {
