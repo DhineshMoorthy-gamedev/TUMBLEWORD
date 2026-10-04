@@ -76,6 +76,9 @@ export class GameState {
   }
 
   getMaxMoves() {
+    if (this.isTutorial || (this.level && this.level.isTutorial)) {
+      return Infinity;
+    }
     if (this.isEndless || (this.level && this.level.isEndless)) {
       return Infinity;
     }

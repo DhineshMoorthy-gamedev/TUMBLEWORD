@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Tumbleword</string>
-    <string name="title_activity_main">Tumbleword</string>
-    <string name="package_name">com.olaidigitalstudios.tumbleword</string>
-    <string name="custom_url_scheme">com.olaidigitalstudios.tumbleword</string>
+    <string name="app_name">Rotatle</string>
+    <string name="title_activity_main">Rotatle</string>
+    <string name="package_name">com.olaidigitalstudios.rotatle</string>
+    <string name="custom_url_scheme">com.olaidigitalstudios.rotatle</string>
 </resources>

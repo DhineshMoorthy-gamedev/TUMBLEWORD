@@ -1,11 +1,12 @@
-const BEST_STREAK_KEY = 'tumbleword_best_streak';
-const COMPLETED_LEVELS_KEY = 'tumbleword_completed_levels';
-const UNLOCKED_LEVEL_KEY = 'tumbleword_unlocked_level';
-const TOTAL_WORDS_KEY = 'tumbleword_total_words';
-const SOUND_MUTED_KEY = 'tumbleword_sound_muted';
-const VIBRATE_KEY = 'tumbleword_vibrate_enabled';
-const LEVEL_STARS_KEY = 'tumbleword_level_stars';
-const LEVEL_BEST_MOVES_KEY = 'tumbleword_level_best_moves';
+const BEST_STREAK_KEY = 'rotatle_best_streak';
+const COMPLETED_LEVELS_KEY = 'rotatle_completed_levels';
+const UNLOCKED_LEVEL_KEY = 'rotatle_unlocked_level';
+const TOTAL_WORDS_KEY = 'rotatle_total_words';
+const SOUND_MUTED_KEY = 'rotatle_sound_muted';
+const VIBRATE_KEY = 'rotatle_vibrate_enabled';
+const REMINDER_KEY = 'rotatle_reminder_enabled';
+const LEVEL_STARS_KEY = 'rotatle_level_stars';
+const LEVEL_BEST_MOVES_KEY = 'rotatle_level_best_moves';
 
 /**
  * Calculate maximum move budget for a level
@@ -187,6 +188,21 @@ export function saveVibrateEnabled(enabled) {
   } catch (e) {}
 }
 
+export function loadReminderEnabled() {
+  try {
+    const val = localStorage.getItem(REMINDER_KEY) ?? localStorage.getItem('tumbleword_reminder_enabled');
+    return val !== null ? val === 'true' : false;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function saveReminderEnabled(enabled) {
+  try {
+    localStorage.setItem(REMINDER_KEY, String(enabled));
+  } catch (e) {}
+}
+
 export function clearAllGameData() {
   try {
     localStorage.removeItem(BEST_STREAK_KEY);
@@ -195,7 +211,17 @@ export function clearAllGameData() {
     localStorage.removeItem(TOTAL_WORDS_KEY);
     localStorage.removeItem(LEVEL_STARS_KEY);
     localStorage.removeItem(LEVEL_BEST_MOVES_KEY);
+    localStorage.removeItem('rotatle_daily_data');
+    localStorage.removeItem('rotatle_endless_best');
+    // Also clean up any legacy tumbleword keys if present
+    localStorage.removeItem('tumbleword_best_streak');
+    localStorage.removeItem('tumbleword_completed_levels');
+    localStorage.removeItem('tumbleword_unlocked_level');
+    localStorage.removeItem('tumbleword_total_words');
+    localStorage.removeItem('tumbleword_level_stars');
+    localStorage.removeItem('tumbleword_level_best_moves');
     localStorage.removeItem('tumbleword_daily_data');
+    localStorage.removeItem('tumbleword_endless_best');
   } catch (e) {}
 }
 

@@ -28,6 +28,11 @@ export class GameEngine {
     this.nativeBridge = nativeBridge;
     this.nextCardId = 1;
     this._queuedTurn = null;
+    this.tutorialManager = null;
+  }
+
+  setTutorialManager(tutorialManager) {
+    this.tutorialManager = tutorialManager;
   }
 
   /**
@@ -200,6 +205,10 @@ export class GameEngine {
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
 
+      if (this.state.isTutorial && this.tutorialManager) {
+        this.tutorialManager.onGameStep('turn');
+      }
+
       if (this.checkOutOfMoves()) {
         return;
       }
@@ -219,6 +228,7 @@ export class GameEngine {
    * @returns {boolean}
    */
   checkOutOfMoves() {
+    if (this.state.isTutorial || (this.state.level && this.state.level.isTutorial)) return false;
     if (this.state.isEndless || (this.state.level && this.state.level.isEndless)) return false;
     if (this.state.runCompleted || this.state.mode !== 'play') return false;
 
@@ -325,7 +335,7 @@ export class GameEngine {
     survivor.ch = currentWord;
     survivor.completed = true;
     survivor.isCompletedWord = true;
-    survivor.lifespan = currentWord.length;
+    survivor.lifespan = this.state.isTutorial ? 2 : currentWord.length;
 
     const expiredIds = [];
     this.state.cards.forEach(c => {
@@ -337,14 +347,19 @@ export class GameEngine {
 
     const removeIds = winCards.slice(1).map(c => c.id);
 
-    expiredIds.forEach(id => {
-      this.boardRenderer.markDissolving(id);
-    });
-
-    const waitTime = otherWinCards.length > 0 ? (MERGE_MS + 20) : (expiredIds.length > 0 ? 460 : 0);
-    if (expiredIds.length > 0 && this.sound) {
-      setTimeout(() => this.sound.playDissolve(), 100);
+    // Sequential aesthetic dissolution for expired obstacle words across all game modes
+    if (expiredIds.length > 0) {
+      expiredIds.forEach((id, idx) => {
+        this.boardRenderer.markDissolving(id, idx * 140);
+        if (this.sound) {
+          setTimeout(() => this.sound.playDissolve(), idx * 140 + 40);
+        }
+      });
     }
+
+    const mergeWait = otherWinCards.length > 0 ? (MERGE_MS + 20) : 0;
+    const dissolveWait = expiredIds.length > 0 ? (650 + (expiredIds.length - 1) * 140) : 0;
+    const waitTime = Math.max(mergeWait, dissolveWait);
 
     setTimeout(() => {
       removeIds.forEach(id => this.boardRenderer.removeCard(id));
@@ -362,9 +377,9 @@ export class GameEngine {
 
       if (this.state.isEndless) {
         // Save best streak
-        const best = parseInt(localStorage.getItem('tumbleword_endless_best') || '0', 10);
+        const best = parseInt(localStorage.getItem('rotatle_endless_best') || localStorage.getItem('tumbleword_endless_best') || '0', 10);
         if (this.state.streak > best) {
-          localStorage.setItem('tumbleword_endless_best', String(this.state.streak));
+          localStorage.setItem('rotatle_endless_best', String(this.state.streak));
         }
 
         // Check if player has conquered the entire Endless Arcade word dictionary!
@@ -416,6 +431,35 @@ export class GameEngine {
         return;
       }
 
+      if (this.state.isTutorial) {
+        if (this.sound) this.sound.playWordComplete();
+        if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
+
+        const words = this.state.level.words;
+        if (this.state.wordIdx === words.length - 1) {
+          this.state.runCompleted = true;
+          const finalPause = expiredIds.length > 0 ? 1100 : 700;
+          setTimeout(() => {
+            if (this.tutorialManager) {
+              this.tutorialManager.onGameStep('levelComplete');
+            }
+          }, finalPause);
+          return;
+        }
+
+        if (this.tutorialManager) {
+          this.tutorialManager.onGameStep('wordComplete');
+        }
+
+        setTimeout(() => {
+          this.state.wordIdx++;
+          this.spawnCurrentWord(false);
+          this.state.locked = false;
+          this.uiManager.updateStats(this.state);
+        }, 600);
+        return;
+      }
+
       const words = this.state.level.words;
       if (this.state.wordIdx === words.length - 1) {
         this.state.runCompleted = true;
@@ -423,11 +467,14 @@ export class GameEngine {
         const earnedStars = this.state.getCurrentStars();
         if (this.sound) this.sound.playVictory();
         if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
-        this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level, earnedStars, this.sound);
-        this.uiManager.setStatus(
-          `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves (${earnedStars}★).`
-        );
-        this.uiManager.updateStats(this.state);
+        const finalCampaignPause = expiredIds.length > 0 ? 1000 : 500;
+        setTimeout(() => {
+          this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level, earnedStars, this.sound);
+          this.uiManager.setStatus(
+            `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves (${earnedStars}★).`
+          );
+          this.uiManager.updateStats(this.state);
+        }, finalCampaignPause);
         return;
       }
 

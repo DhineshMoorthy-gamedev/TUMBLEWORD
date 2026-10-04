@@ -292,6 +292,92 @@ export class UIManager {
     return modals.find(m => !m.hidden) || null;
   }
 
+  isAnyModalOpen() {
+    return !!this.getActiveModal();
+  }
+
+  setRateButtonLoading(isLoading) {
+    if (this.el.rateAppBtn) {
+      this.el.rateAppBtn.classList.toggle('loading', isLoading);
+    }
+  }
+
+  setCheckUpdatesLoading(isLoading) {
+    if (this.el.checkForUpdatesBtn) {
+      this.el.checkForUpdatesBtn.disabled = isLoading;
+      this.el.checkForUpdatesBtn.textContent = isLoading ? 'Checking...' : 'Check for Updates';
+    }
+  }
+
+  /**
+   * Show in-app update modal
+   * @param {object} [updateInfo]
+   */
+  showAppUpdateModal(updateInfo = {}) {
+    const modal = document.getElementById('appUpdateModal');
+    const versionTag = document.getElementById('updateVersionTag');
+    const desc = document.getElementById('updateDescriptionText');
+    const startBtn = document.getElementById('startUpdateBtn');
+    const restartBtn = document.getElementById('restartUpdateBtn');
+    const progressSection = document.getElementById('updateProgressSection');
+
+    if (versionTag && updateInfo.availableVersionName) {
+      versionTag.textContent = `v${updateInfo.availableVersionName} Available`;
+    } else if (versionTag && updateInfo.availableVersionCode) {
+      versionTag.textContent = `Build ${updateInfo.availableVersionCode} Available`;
+    }
+
+    if (progressSection) progressSection.hidden = true;
+    if (startBtn) {
+      startBtn.hidden = false;
+      startBtn.disabled = false;
+    }
+    if (restartBtn) restartBtn.hidden = true;
+
+    this.openModal('appUpdateModal');
+  }
+
+  /**
+   * Hide in-app update modal
+   */
+  hideAppUpdateModal() {
+    this.closeModal('appUpdateModal');
+  }
+
+  /**
+   * Update download progress in modal
+   * @param {number} percent - 0 to 100
+   * @param {string} [statusText]
+   */
+  setUpdateProgress(percent = 0, statusText = 'Downloading update...') {
+    const progressSection = document.getElementById('updateProgressSection');
+    const fill = document.getElementById('updateProgressFill');
+    const status = document.getElementById('updateProgressStatus');
+    const percentEl = document.getElementById('updateProgressPercent');
+    const startBtn = document.getElementById('startUpdateBtn');
+
+    if (progressSection) progressSection.hidden = false;
+    if (fill) fill.style.width = `${percent}%`;
+    if (status) status.textContent = statusText;
+    if (percentEl) percentEl.textContent = `${percent}%`;
+    if (startBtn) startBtn.disabled = true;
+  }
+
+  /**
+   * Update UI to ready-to-restart state
+   */
+  setUpdateReadyToRestart() {
+    const progressSection = document.getElementById('updateProgressSection');
+    const startBtn = document.getElementById('startUpdateBtn');
+    const restartBtn = document.getElementById('restartUpdateBtn');
+    const desc = document.getElementById('updateDescriptionText');
+
+    if (progressSection) progressSection.hidden = true;
+    if (startBtn) startBtn.hidden = true;
+    if (restartBtn) restartBtn.hidden = false;
+    if (desc) desc.textContent = 'Update downloaded successfully! Restart Rotatle to complete installation.';
+  }
+
   /**
    * Switch to Home Screen view
    */
@@ -326,8 +412,16 @@ export class UIManager {
    * @param {object} level
    */
   updateLevelHeader(level) {
+    const isTutorial = !!(level && level.isTutorial);
+    if (this.el.gameScreen) {
+      this.el.gameScreen.classList.toggle('tutorial-mode', isTutorial);
+    }
+
     if (this.el.currentLevelName) {
-      if (level && level.isEndless) {
+      if (isTutorial) {
+        this.el.currentLevelName.textContent = 'HOW TO PLAY';
+        if (this.el.currentSeedBadge) this.el.currentSeedBadge.style.display = 'none';
+      } else if (level && level.isEndless) {
         this.el.currentLevelName.textContent = 'ENDLESS ARCADE';
         if (this.el.currentSeedBadge) {
           const seed = level.seed !== undefined ? level.seed : '';
@@ -354,6 +448,7 @@ export class UIManager {
    * @param {boolean} isPlayingTimeline
    */
   updateStats(gameState, isPlayingTimeline = false) {
+    const isTutorial = gameState.isTutorial || (gameState.level && gameState.level.isTutorial);
     const isEndless = gameState.isEndless || (gameState.level && gameState.level.isEndless);
     const totalWords = gameState.level ? gameState.level.words.length : 3;
     const currentWordNum = Math.min(gameState.wordIdx + 1, totalWords);
@@ -364,11 +459,19 @@ export class UIManager {
     const remMoves = Math.max(0, maxMoves - moves);
     const currentStars = gameState.getCurrentStars ? gameState.getCurrentStars() : 3;
 
-    if (isEndless) {
+    if (isTutorial) {
+      if (this.el.wordProgressLabel) this.el.wordProgressLabel.textContent = 'WORD';
+      if (this.el.wordProgress) this.el.wordProgress.textContent = `${currentWordNum}/${totalWords}`;
+      if (this.el.movesLabel) this.el.movesLabel.textContent = 'MOVES';
+      if (this.el.moves) this.el.moves.textContent = String(moves);
+      if (this.el.starGoalsTracker) {
+        this.el.starGoalsTracker.style.display = 'none';
+      }
+    } else if (isEndless) {
       if (this.el.wordProgressLabel) this.el.wordProgressLabel.textContent = 'STREAK';
       if (this.el.wordProgress) this.el.wordProgress.textContent = `🔥 ${gameState.streak}`;
 
-      const bestEndless = parseInt(localStorage.getItem('tumbleword_endless_best') || '0', 10);
+      const bestEndless = parseInt(localStorage.getItem('rotatle_endless_best') || localStorage.getItem('tumbleword_endless_best') || '0', 10);
       if (this.el.movesLabel) this.el.movesLabel.textContent = 'BEST';
       if (this.el.moves) this.el.moves.textContent = `🏆 ${Math.max(bestEndless, gameState.streak)}`;
 
@@ -711,5 +814,32 @@ export class UIManager {
     if (this.el.outOfMovesModal) {
       this.el.outOfMovesModal.hidden = true;
     }
+  }
+
+  /**
+   * Show a modern floating toast notification message
+   * @param {string} message
+   * @param {number} [durationMs=2800]
+   */
+  showToast(message, durationMs = 2800) {
+    let toast = document.getElementById('appToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'appToast';
+      toast.className = 'app-toast';
+      document.body.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    toast.classList.remove('show');
+    // Force DOM reflow to restart CSS animation
+    void toast.offsetWidth;
+    toast.classList.add('show');
+
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+      this._toastTimer = null;
+    }, durationMs);
   }
 }

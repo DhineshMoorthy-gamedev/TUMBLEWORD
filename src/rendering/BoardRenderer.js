@@ -171,12 +171,42 @@ export class BoardRenderer {
   }
 
   /**
-   * Add dissolving animation class
+   * Add dissolving animation class and particle burst
    * @param {number} id
+   * @param {number} [delayMs=0]
    */
-  markDissolving(id) {
+  markDissolving(id, delayMs = 0) {
     const el = this.cardEls.get(id);
-    if (el) el.classList.add('dissolving');
+    if (el) {
+      setTimeout(() => {
+        el.classList.add('dissolving');
+        this.spawnDissolveBurst(el, 8);
+      }, delayMs);
+    }
+  }
+
+  /**
+   * Spawn particle burst when an obstacle card dissolves
+   * @param {HTMLElement} targetEl
+   * @param {number} [count=8]
+   */
+  spawnDissolveBurst(targetEl, count = 8) {
+    if (!targetEl) return;
+
+    for (let i = 0; i < count; i++) {
+      const sp = document.createElement('div');
+      sp.className = 'dissolve-particle';
+      sp.style.left = '50%';
+      sp.style.top = '50%';
+
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+      const dist = 14 + Math.random() * 22;
+      sp.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      sp.style.setProperty('--dy', `${Math.sin(angle) * dist - 10}px`);
+
+      targetEl.appendChild(sp);
+      setTimeout(() => sp.remove(), 650);
+    }
   }
 
   /**

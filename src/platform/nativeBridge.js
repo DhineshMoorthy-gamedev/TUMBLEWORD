@@ -1,4 +1,20 @@
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { InAppReview } from '@capacitor-community/in-app-review';
 import { TargetConfig } from '../config/targetConfig.js';
+import { loadVibrateEnabled } from '../utils/storage.js';
+
+/**
+ * Check if haptic vibration is supported on current platform/device
+ * @returns {boolean}
+ */
+export function isHapticsSupported() {
+  if (typeof window === 'undefined') return false;
+  if (Capacitor.isNativePlatform()) return true;
+  return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+}
 
 export class NativeBridge {
   /**
@@ -14,9 +30,9 @@ export class NativeBridge {
     if (typeof window === 'undefined') return;
 
     // Check if running inside native Capacitor
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        const savedTheme = localStorage.getItem('tumbleword_theme') || 'obsidian';
+        const savedTheme = localStorage.getItem('rotatle_theme') || localStorage.getItem('tumbleword_theme') || 'obsidian';
         await this.syncThemeWithStatusBar(savedTheme);
       } catch (e) {
         // Optional in web environments
@@ -30,14 +46,11 @@ export class NativeBridge {
    */
   async syncThemeWithStatusBar(theme) {
     if (typeof window === 'undefined') return;
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        const StatusBar = window.Capacitor.Plugins?.StatusBar;
-        if (StatusBar) {
-          const isVellum = theme === 'vellum';
-          await StatusBar.setStyle({ style: isVellum ? 'LIGHT' : 'DARK' });
-          await StatusBar.setBackgroundColor({ color: isVellum ? '#F7F5F0' : '#121316' });
-        }
+        const isVellum = theme === 'vellum';
+        await StatusBar.setStyle({ style: isVellum ? Style.Light : Style.Dark });
+        await StatusBar.setBackgroundColor({ color: isVellum ? '#F7F5F0' : '#121316' });
       } catch (e) {}
     }
   }
@@ -45,14 +58,11 @@ export class NativeBridge {
   async _bindBackButton() {
     if (typeof window === 'undefined') return;
 
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        const App = window.Capacitor.Plugins?.App;
-        if (App) {
-          App.addListener('backButton', () => {
-            this.handleHardwareBack();
-          });
-        }
+        App.addListener('backButton', () => {
+          this.handleHardwareBack();
+        });
       } catch (e) {}
     }
   }
@@ -104,49 +114,84 @@ export class NativeBridge {
     }
 
     // Tier 8: Minimize Native Android App
-    if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        const App = window.Capacitor.Plugins?.App;
-        if (App && App.minimizeApp) App.minimizeApp();
+        await App.minimizeApp();
       } catch (e) {}
     }
   }
 
   /**
    * Trigger tactile haptic feedback
-   * @param {'light'|'medium'|'success'|'warning'} type
+   * @param {'light'|'medium'|'heavy'|'success'|'warning'|'error'} type
    */
   async triggerHaptic(type = 'light') {
     if (typeof window === 'undefined') return;
 
+    // Honor user vibration toggle setting
+    if (!loadVibrateEnabled()) return;
+
     // 1. Try native Capacitor Haptics if available
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        const Haptics = window.Capacitor.Plugins?.Haptics;
-        if (Haptics) {
-          if (type === 'success') {
-            await Haptics.notification({ type: 'SUCCESS' });
-          } else if (type === 'warning') {
-            await Haptics.notification({ type: 'WARNING' });
-          } else {
-            await Haptics.impact({ style: type === 'medium' ? 'MEDIUM' : 'LIGHT' });
-          }
-          return;
+        if (type === 'success') {
+          await Haptics.notification({ type: NotificationType.Success });
+        } else if (type === 'warning' || type === 'error') {
+          await Haptics.notification({ type: NotificationType.Warning });
+        } else if (type === 'heavy') {
+          await Haptics.impact({ style: ImpactStyle.Heavy });
+        } else if (type === 'medium') {
+          await Haptics.impact({ style: ImpactStyle.Medium });
+        } else {
+          await Haptics.impact({ style: ImpactStyle.Light });
         }
-      } catch (e) {}
+        return;
+      } catch (e) {
+        // Fall back to Web Vibration if native call throws
+      }
     }
 
     // 2. Fallback to Web Vibration API on mobile browsers
-    if (TargetConfig.features.webVibrate && navigator.vibrate) {
+    if (TargetConfig.features.webVibrate && typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
         if (type === 'success') {
           navigator.vibrate([25, 40, 35]);
-        } else if (type === 'warning') {
+        } else if (type === 'warning' || type === 'error') {
           navigator.vibrate([35, 30, 35]);
+        } else if (type === 'heavy') {
+          navigator.vibrate(30);
+        } else if (type === 'medium') {
+          navigator.vibrate(20);
         } else {
           navigator.vibrate(12);
         }
       } catch (e) {}
+    }
+  }
+
+  /**
+   * Request native Google Play In-App Review dialog
+   * Directly triggers the official Google Play in-app rating flow.
+   * Falls back gracefully to Play Store market URL on older devices/web.
+   */
+  async requestInAppReview() {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await InAppReview.requestReview();
+        return true;
+      } catch (e) {
+        console.warn('Native InAppReview failed, falling back to market URL:', e);
+        try {
+          window.location.href = 'market://details?id=com.olaidigitalstudios.rotatle';
+          return true;
+        } catch (err) {
+          window.open('https://play.google.com/store/apps/details?id=com.olaidigitalstudios.rotatle', '_blank');
+          return true;
+        }
+      }
+    } else {
+      window.open('https://play.google.com/store/apps/details?id=com.olaidigitalstudios.rotatle', '_blank');
+      return true;
     }
   }
 }

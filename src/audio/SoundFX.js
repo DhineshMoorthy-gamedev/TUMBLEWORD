@@ -11,7 +11,8 @@ class SoundFXManager {
 
   _loadPreference() {
     try {
-      this.muted = localStorage.getItem('tumbleword_muted') === 'true';
+      const val = localStorage.getItem('rotatle_muted') ?? localStorage.getItem('tumbleword_muted');
+      this.muted = val === 'true';
     } catch (e) {
       this.muted = false;
     }
@@ -32,7 +33,7 @@ class SoundFXManager {
   toggleMute() {
     this.muted = !this.muted;
     try {
-      localStorage.setItem('tumbleword_muted', String(this.muted));
+      localStorage.setItem('rotatle_muted', String(this.muted));
     } catch (e) {}
     return this.muted;
   }

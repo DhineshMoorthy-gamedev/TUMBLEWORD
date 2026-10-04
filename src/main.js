@@ -8,7 +8,7 @@ import { InputManager } from './input/InputManager.js';
 import { generateMoveTimeline } from './simulation/timeline.js';
 import { CAMPAIGN_LEVELS } from './levels/campaignLevels.js';
 import { soundFX } from './audio/SoundFX.js';
-import { NativeBridge } from './platform/nativeBridge.js';
+import { NativeBridge, isHapticsSupported } from './platform/nativeBridge.js';
 import { setupLifecycle } from './platform/lifecycle.js';
 import { TargetConfig } from './config/targetConfig.js';
 import { initTheme, toggleTheme, applyTheme, getSavedTheme } from './utils/theme.js';
@@ -20,9 +20,14 @@ import {
   buildEndlessTimelineSnapshots
 } from './simulation/endlessSimulator.js';
 import { getEndlessWalls } from './data/endlessWalls.js';
+import { TutorialManager } from './tutorial/tutorialManager.js';
+import { notificationManager } from './platform/notificationManager.js';
+import { appUpdateManager } from './platform/appUpdateManager.js';
 import {
   loadVibrateEnabled,
   saveVibrateEnabled,
+  loadReminderEnabled,
+  saveReminderEnabled,
   clearAllGameData,
   getTotalStarsEarned
 } from './utils/storage.js';
@@ -169,7 +174,6 @@ const elements = {
   settingsRemoveAdsBtn: $('settingsRemoveAdsBtn'),
   rateAppBtn: $('rateAppBtn'),
   contactSupportBtn: $('contactSupportBtn'),
-  sendFeedbackBtn: $('sendFeedbackBtn'),
   privacyPolicyBtn: $('privacyPolicyBtn'),
   aboutCreditsBtn: $('aboutCreditsBtn'),
   settingsSubview: $('settingsSubview'),
@@ -184,7 +188,22 @@ const elements = {
   calStatThisMonth: $('calStatThisMonth'),
   calStatLiveStreak: $('calStatLiveStreak'),
   calStatAllTime: $('calStatAllTime'),
-  calendarDaysGrid: $('calendarDaysGrid')
+  calendarDaysGrid: $('calendarDaysGrid'),
+  tutorialWelcomeModal: $('tutorialWelcomeModal'),
+  tutorialOutroModal: $('tutorialOutroModal'),
+  tutorialPromptBanner: $('tutorialPromptBanner'),
+  tutorialStepIndicator: $('tutorialStepIndicator'),
+  tutorialPromptText: $('tutorialPromptText'),
+  startTutorialBtn: $('startTutorialBtn'),
+  exitTutorialBtn: $('exitTutorialBtn'),
+  outroPlayLevel1Btn: $('outroPlayLevel1Btn'),
+  outroPlayEndlessBtn: $('outroPlayEndlessBtn'),
+  outroHomeBtn: $('outroHomeBtn'),
+  appUpdateModal: $('appUpdateModal'),
+  closeUpdateModalBtn: $('closeUpdateModalBtn'),
+  startUpdateBtn: $('startUpdateBtn'),
+  restartUpdateBtn: $('restartUpdateBtn'),
+  dismissUpdateBtn: $('dismissUpdateBtn')
 };
 
 // Calendar Viewing State
@@ -230,6 +249,9 @@ function openSettingsScreen() {
   updateThemeUI();
   updateSoundButtons();
   checkVibrateSupport();
+  if (elements.settingsReminderToggle) {
+    elements.settingsReminderToggle.checked = loadReminderEnabled();
+  }
 }
 
 function closeSettingsScreen() {
@@ -242,22 +264,43 @@ function closeSettingsScreen() {
 }
 
 function checkVibrateSupport() {
-  const hasVibrate = !!(navigator.vibrate || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
+  const hasVibrate = isHapticsSupported();
   uiManager.setVibrationSupport(hasVibrate);
-  if (hasVibrate && elements.settingsVibrateToggle) {
-    elements.settingsVibrateToggle.checked = loadVibrateEnabled();
+  if (elements.settingsVibrateToggle) {
+    elements.settingsVibrateToggle.checked = hasVibrate ? loadVibrateEnabled() : false;
   }
 }
 
-// Initialize Theme & UI
+async function initDailyReminders() {
+  await notificationManager.init();
+  const isEnabled = loadReminderEnabled();
+  if (elements.settingsReminderToggle) {
+    elements.settingsReminderToggle.checked = isEnabled;
+  }
+  if (isEnabled) {
+    const hasPerm = await notificationManager.hasPermission();
+    if (hasPerm) {
+      await notificationManager.scheduleDailyReminder(9, 0);
+    }
+  }
+}
+
+// Initialize Theme, UI, Vibration & Daily Reminders
 initTheme(nativeBridge);
 updateThemeUI();
+checkVibrateSupport();
+initDailyReminders();
 
 function updateThemeUI(theme) {
   const current = theme || getSavedTheme();
   uiManager.updateSettingsThemePills(current);
 }
 
+window.addEventListener('rotatle:themechange', e => {
+  if (e.detail && e.detail.theme) {
+    updateThemeUI(e.detail.theme);
+  }
+});
 window.addEventListener('tumbleword:themechange', e => {
   if (e.detail && e.detail.theme) {
     updateThemeUI(e.detail.theme);
@@ -272,6 +315,16 @@ const engine = new GameEngine(
   soundFX,
   nativeBridge
 );
+
+const tutorialManager = new TutorialManager({
+  engine,
+  state,
+  uiManager,
+  sound: soundFX,
+  nativeBridge,
+  elements
+});
+engine.setTutorialManager(tutorialManager);
 
 let fullTimeline = [];
 let totalTimelineMoves = 0;
@@ -328,6 +381,9 @@ function loadLevelTimeline(level) {
 }
 
 function startLevel(levelOrId) {
+  if (tutorialManager && tutorialManager.active) {
+    tutorialManager.exitTutorial();
+  }
   state.screen = 'game';
   uiManager.showGameScreen();
   state.setLevel(levelOrId);
@@ -340,6 +396,9 @@ function startLevel(levelOrId) {
 }
 
 function goToHomeScreen() {
+  if (tutorialManager && tutorialManager.active) {
+    tutorialManager.exitTutorial();
+  }
   state.screen = 'home';
   timelineController.pause();
   uiManager.showHomeScreen();
@@ -352,7 +411,7 @@ function goToHomeScreen() {
   uiManager.startCountdownTimer(dailyManager);
 
   // Update Endless Arcade best streak
-  const bestEndless = localStorage.getItem('tumbleword_endless_best') || '0';
+  const bestEndless = localStorage.getItem('rotatle_endless_best') || localStorage.getItem('tumbleword_endless_best') || '0';
   if (elements.endlessBestStreakVal) {
     elements.endlessBestStreakVal.textContent = bestEndless;
   }
@@ -624,7 +683,48 @@ if (elements.outOfMovesHomeBtn) {
 if (elements.homeHelpBtn) {
   elements.homeHelpBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    uiManager.openModal('helpModal');
+    tutorialManager.openWelcomeModal();
+  });
+}
+
+if (elements.startTutorialBtn) {
+  elements.startTutorialBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    tutorialManager.startTutorial();
+  });
+}
+
+if (elements.exitTutorialBtn) {
+  elements.exitTutorialBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    tutorialManager.exitTutorial();
+    goToHomeScreen();
+  });
+}
+
+if (elements.outroPlayLevel1Btn) {
+  elements.outroPlayLevel1Btn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.closeAllModals();
+    startLevel(1);
+  });
+}
+
+if (elements.outroPlayEndlessBtn) {
+  elements.outroPlayEndlessBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.closeAllModals();
+    state.screen = 'game';
+    const seed = Math.floor(1000 + Math.random() * 90000);
+    engine.startEndlessMode(seed);
+  });
+}
+
+if (elements.outroHomeBtn) {
+  elements.outroHomeBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.closeAllModals();
+    goToHomeScreen();
   });
 }
 
@@ -682,6 +782,7 @@ if (elements.settingsSoundToggle) {
 if (elements.settingsVibrateToggle) {
   elements.settingsVibrateToggle.addEventListener('change', e => {
     saveVibrateEnabled(e.target.checked);
+    if (soundFX) soundFX.playClick();
     if (e.target.checked) {
       nativeBridge.triggerHaptic('light');
     }
@@ -689,37 +790,68 @@ if (elements.settingsVibrateToggle) {
 }
 
 if (elements.settingsReminderToggle) {
-  elements.settingsReminderToggle.addEventListener('change', () => {
+  elements.settingsReminderToggle.addEventListener('change', async e => {
     if (soundFX) soundFX.playClick();
+    const isChecked = e.target.checked;
+    if (isChecked) {
+      const hasPerm = await notificationManager.hasPermission();
+      if (!hasPerm) {
+        const granted = await notificationManager.requestPermission();
+        if (!granted) {
+          e.target.checked = false;
+          saveReminderEnabled(false);
+          uiManager.showToast('Notification permission denied');
+          return;
+        }
+      }
+      saveReminderEnabled(true);
+      await notificationManager.scheduleDailyReminder(9, 0);
+      if (nativeBridge) nativeBridge.triggerHaptic('light');
+      uiManager.showToast('Daily reminders set for 9:00 AM');
+    } else {
+      saveReminderEnabled(false);
+      await notificationManager.cancelDailyReminder();
+      uiManager.showToast('Daily reminders turned off');
+    }
   });
 }
 
 if (elements.settingsRemoveAdsBtn) {
   elements.settingsRemoveAdsBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    alert('You have the complete ad-free premium version of Tumbleword!');
+    alert('You have the complete ad-free premium version of Rotatle!');
   });
 }
 
 // Support & About Navigation Rows
 if (elements.rateAppBtn) {
-  elements.rateAppBtn.addEventListener('click', () => {
+  elements.rateAppBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
-    window.open('https://olaimediagroup.com', '_blank');
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+
+    // Clean loading state on button
+    uiManager.setRateButtonLoading(true);
+
+    try {
+      if (nativeBridge) {
+        await nativeBridge.requestInAppReview();
+      } else {
+        window.open('https://play.google.com/store/apps/details?id=com.olaidigitalstudios.rotatle', '_blank');
+      }
+    } catch (e) {
+      console.warn('Native in-app review error:', e);
+    } finally {
+      setTimeout(() => {
+        uiManager.setRateButtonLoading(false);
+      }, 400);
+    }
   });
 }
 
 if (elements.contactSupportBtn) {
   elements.contactSupportBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    window.location.href = 'mailto:support@olaimediagroup.com?subject=Tumbleword%20Support';
-  });
-}
-
-if (elements.sendFeedbackBtn) {
-  elements.sendFeedbackBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    window.location.href = 'mailto:feedback@olaimediagroup.com?subject=Tumbleword%20Feedback';
+    window.location.href = 'mailto:olaidigitalstudios@gmail.com?subject=Rotatle%20Support';
   });
 }
 
@@ -738,9 +870,75 @@ if (elements.aboutCreditsBtn) {
 }
 
 if (elements.checkForUpdatesBtn) {
-  elements.checkForUpdatesBtn.addEventListener('click', () => {
+  elements.checkForUpdatesBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
-    alert('TUMBLEWORD is currently on the latest version (v0.0.1) — All systems up to date!');
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+
+    uiManager.setCheckUpdatesLoading(true);
+
+    try {
+      const result = await appUpdateManager.checkForUpdate();
+
+      if (result.available) {
+        if (result.downloaded) {
+          uiManager.showAppUpdateModal(result.info || {});
+          uiManager.setUpdateReadyToRestart();
+        } else {
+          uiManager.showAppUpdateModal(result.info || {});
+        }
+      } else {
+        uiManager.showToast('ROTATLE is up to date (v0.0.6)');
+      }
+    } catch (e) {
+      console.warn('Check for updates error:', e);
+      uiManager.showToast('ROTATLE is up to date (v0.0.6)');
+    } finally {
+      setTimeout(() => {
+        uiManager.setCheckUpdatesLoading(false);
+      }, 500);
+    }
+  });
+}
+
+// In-App Update Modal Actions
+if (elements.startUpdateBtn) {
+  elements.startUpdateBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+    uiManager.setUpdateProgress(0, 'Starting download...');
+
+    try {
+      await appUpdateManager.startFlexibleUpdate();
+    } catch (e) {
+      console.warn('Start flexible update error:', e);
+      uiManager.showToast('Could not start in-app update. Opening Play Store...');
+      uiManager.hideAppUpdateModal();
+    }
+  });
+}
+
+if (elements.restartUpdateBtn) {
+  elements.restartUpdateBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('success');
+    uiManager.showToast('Restarting ROTATLE...');
+    setTimeout(async () => {
+      await appUpdateManager.completeFlexibleUpdate();
+    }, 300);
+  });
+}
+
+if (elements.closeUpdateModalBtn) {
+  elements.closeUpdateModalBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideAppUpdateModal();
+  });
+}
+
+if (elements.dismissUpdateBtn) {
+  elements.dismissUpdateBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideAppUpdateModal();
   });
 }
 
@@ -897,6 +1095,16 @@ function giveHint() {
   }
 }
 
+// Setup In-App Update Flexible Download Listeners
+appUpdateManager.setupFlexibleListener(state => {
+  if (state.isDownloading) {
+    uiManager.setUpdateProgress(state.percent, `Downloading update (${state.percent}%)...`);
+  } else if (state.isDownloaded) {
+    uiManager.setUpdateReadyToRestart();
+    uiManager.showToast('Update downloaded! Tap to restart and install.');
+  }
+});
+
 // Setup Platform Lifecycle (PWA caching & pause on background)
 setupLifecycle({
   onAppBackground: () => {
@@ -904,7 +1112,14 @@ setupLifecycle({
       timelineController.pause();
     }
   },
-  onAppForeground: () => {}
+  onAppForeground: async () => {
+    try {
+      const updateCheck = await appUpdateManager.checkForUpdate();
+      if (updateCheck && updateCheck.downloaded) {
+        uiManager.showToast('Update ready to install! Open About to restart.');
+      }
+    } catch (e) {}
+  }
 });
 
 // Setup Input Management & Keyboard Routing

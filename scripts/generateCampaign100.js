@@ -643,7 +643,7 @@ const fileHeader = `/**
 export const CAMPAIGN_LEVELS = ${JSON.stringify(generatedLevels, null, 2)};
 `;
 
-const outputPath = path.resolve('E:/PROTO/TUMBLEWORD/src/levels/campaignLevels.js');
+const outputPath = path.resolve(process.cwd(), 'src/levels/campaignLevels.js');
 fs.writeFileSync(outputPath, fileHeader, 'utf-8');
 
 console.log(`\n🎉 SUCCESS! Generated and verified all 100 levels into:\n${outputPath}`);

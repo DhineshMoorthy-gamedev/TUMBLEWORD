@@ -1,4 +1,4 @@
-package com.olaidigitalstudios.tumbleword;
+package com.olaidigitalstudios.rotatle;
 
 import com.getcapacitor.BridgeActivity;
 

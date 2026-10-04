@@ -1,6 +1,6 @@
 {
-  "name": "Tumbleword",
-  "short_name": "Tumbleword",
+  "name": "Rotatle",
+  "short_name": "Rotatle",
   "description": "The rotating gravity word puzzle game.",
   "start_url": "./",
   "display": "standalone",

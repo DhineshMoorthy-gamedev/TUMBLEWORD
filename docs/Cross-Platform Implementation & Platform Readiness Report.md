@@ -1,14 +1,14 @@
 # Cross-Platform Implementation & Platform Readiness Report
-**Project:** Tumbleword (`com.olaidigitalstudios.tumbleword`)  
+**Project:** Rotatle (`com.olaidigitalstudios.rotatle`)  
 **Scope:** Architecture Modernization, Multi-Target Build Pipeline Verification, Audio Synthesis & Platform Readiness  
-**Version:** `0.0.1`  
+**Version:** `0.0.6`  
 **Date:** September 2026  
 
 ---
 
 ## Executive Summary & Completion Dashboard
 
-Tumbleword has been transformed from a single monolithic HTML file into a high-performance, modular ES-module architecture powered by **Vite** and **Capacitor v8**. The codebase unifies four distinct deployment targets via environment flags (`__APP_TARGET__` / `VITE_APP_TARGET`): **Android (Google Play Store)**, **Web (PWA / Browser)**, **Desktop / Itch.io (HTML5)**, and **Editor (Dev & Solver Suite)**.
+Rotatle has been transformed from a single monolithic HTML file into a high-performance, modular ES-module architecture powered by **Vite** and **Capacitor v8**. The codebase unifies four distinct deployment targets via environment flags (`__APP_TARGET__` / `VITE_APP_TARGET`): **Android (Google Play Store)**, **Web (PWA / Browser)**, **Desktop / Itch.io (HTML5)**, and **Editor (Dev & Solver Suite)**.
 
 The core rotational gravity physics, 12-level gauntlet sequence, compound obstacle bonding mechanics, zero-dependency Web Audio procedural synthesizer, and exact 63-move pre-solved timeline scrubber are complete and verified.
 
@@ -39,8 +39,8 @@ pie title Platform Implementation Completion
 - **Build Command:** `npm run build:playstore` (Runs Vite build + Capacitor sync)
 - **APK Generation:** `npm run build:apk`
 - **AAB Bundle Generation:** `npm run build:aab`
-- **Package Name:** `com.olaidigitalstudios.tumbleword`
-- **Version:** `0.0.1` (versionCode 1)
+- **Package Name:** `com.olaidigitalstudios.rotatle`
+- **Version:** `0.0.6` (versionCode 6)
 - **Engine / Wrapper:** Capacitor v8.5.1 on Android (`minSdkVersion 24`, `targetSdkVersion 36`).
 
 ### What Is Implemented & Working (92%)

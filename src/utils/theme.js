@@ -1,14 +1,14 @@
 /**
- * Theme Manager for Tumbleword
+ * Theme Manager for Rotatle
  * Supports Obsidian (Dark Mode) and Vellum (Light Cotton Mode)
  * Based on Grid Leap Design System
  */
 
-const THEME_KEY = 'tumbleword_theme';
+const THEME_KEY = 'rotatle_theme';
 
 export function getSavedTheme() {
   try {
-    const saved = localStorage.getItem(THEME_KEY);
+    const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem('tumbleword_theme');
     if (saved === 'vellum' || saved === 'obsidian') return saved;
   } catch (e) {}
   return 'obsidian'; // Default to Obsidian Dark
@@ -32,6 +32,7 @@ function _syncMetaAndPlatform(targetTheme, nativeBridge) {
   }
 
   // Dispatch event for UI components to react if needed
+  window.dispatchEvent(new CustomEvent('rotatle:themechange', { detail: { theme: targetTheme } }));
   window.dispatchEvent(new CustomEvent('tumbleword:themechange', { detail: { theme: targetTheme } }));
 }
 

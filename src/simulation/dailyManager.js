@@ -1,9 +1,9 @@
 /**
- * Daily Challenge Manager for Tumbleword
+ * Daily Challenge Manager for Rotatle
  * Generates deterministic date-seeded word puzzles and tracks daily streaks.
  */
 
-const DAILY_STORAGE_KEY = 'tumbleword_daily_data';
+const DAILY_STORAGE_KEY = 'rotatle_daily_data';
 
 // Curated dictionary of clean 3, 4, 5-letter words for daily puzzle generation
 const DAILY_WORD_POOL = [
@@ -41,7 +41,7 @@ export class DailyManager {
 
   _loadData() {
     try {
-      const raw = localStorage.getItem(DAILY_STORAGE_KEY);
+      const raw = localStorage.getItem(DAILY_STORAGE_KEY) || localStorage.getItem('tumbleword_daily_data');
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return {

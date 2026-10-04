@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tumbleword-v1';
+const CACHE_NAME = 'rotatle-v0.0.6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

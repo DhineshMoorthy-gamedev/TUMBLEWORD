@@ -1,6 +1,6 @@
 {
-  "appId": "com.olaidigitalstudios.tumbleword",
-  "appName": "Tumbleword",
+  "appId": "com.olaidigitalstudios.rotatle",
+  "appName": "Rotatle",
   "webDir": "dist/playstore",
   "bundledWebRuntime": false,
   "server": {
@@ -12,6 +12,10 @@
     "webContentsDebuggingEnabled": false
   },
   "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_rotatle",
+      "iconColor": "#38BDF8"
+    },
     "SplashScreen": {
       "launchShowDuration": 1500,
       "backgroundColor": "#0F161C",
