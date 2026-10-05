@@ -39,8 +39,13 @@ export class GameState {
     this.locked = false;
     this.runCompleted = false;
     this.outOfMoves = false;
+    this.undoUsed = false;
     this.mode = 'play'; // 'play' | 'editor'
     this.screen = 'home'; // 'home' | 'game'
+  }
+
+  get currentWord() {
+    return this.level?.words?.[this.wordIdx]?.word || '';
   }
 
   setLevel(levelOrId) {
@@ -68,6 +73,7 @@ export class GameState {
     this.locked = false;
     this.runCompleted = false;
     this.outOfMoves = false;
+    this.undoUsed = false;
     this.mode = mode;
   }
 

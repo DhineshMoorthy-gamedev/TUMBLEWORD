@@ -10,6 +10,7 @@ import { CAMPAIGN_LEVELS } from './levels/campaignLevels.js';
 import { soundFX } from './audio/SoundFX.js';
 import { NativeBridge, isHapticsSupported } from './platform/nativeBridge.js';
 import { setupLifecycle } from './platform/lifecycle.js';
+import { Capacitor } from '@capacitor/core';
 import { TargetConfig } from './config/targetConfig.js';
 import { initTheme, toggleTheme, applyTheme, getSavedTheme } from './utils/theme.js';
 import { dailyManager } from './simulation/dailyManager.js';
@@ -24,13 +25,21 @@ import { TutorialManager } from './tutorial/tutorialManager.js';
 import { notificationManager } from './platform/notificationManager.js';
 import { appUpdateManager } from './platform/appUpdateManager.js';
 import { inAppPurchaseManager } from './platform/inAppPurchaseManager.js';
+import { admobManager } from './platform/admobManager.js';
+import { hintManager } from './platform/hintManager.js';
+import { achievementManager } from './achievements/achievementManager.js';
+import { runStudioIntro } from './ui/studioIntro.js';
 import {
   loadVibrateEnabled,
   saveVibrateEnabled,
   loadReminderEnabled,
   saveReminderEnabled,
   clearAllGameData,
-  getTotalStarsEarned
+  getTotalStarsEarned,
+  loadHintCount,
+  consumeHint,
+  addHints,
+  updateAchievementStat
 } from './utils/storage.js';
 
 // DOM Element References
@@ -128,6 +137,19 @@ const elements = {
   victoryOptimal: $('victoryOptimal'),
   victoryRatingPill: $('victoryRatingPill'),
   victoryBest: $('victoryBest'),
+  victoryDailyEmblem: $('victoryDailyEmblem'),
+  victoryCampaignStats: $('victoryCampaignStats'),
+  victoryDailyStats: $('victoryDailyStats'),
+  victoryDailyMoves: $('victoryDailyMoves'),
+  victoryDailyStreak: $('victoryDailyStreak'),
+  victoryDailyNav: $('victoryDailyNav'),
+  victoryDailyPrevBtn: $('victoryDailyPrevBtn'),
+  victoryDailyCalBtn: $('victoryDailyCalBtn'),
+  victoryDailyNextBtn: $('victoryDailyNextBtn'),
+  victoryCampaignActions: $('victoryCampaignActions'),
+  victoryDailyActions: $('victoryDailyActions'),
+  victoryDailyHomeBtn: $('victoryDailyHomeBtn'),
+  victoryDailyReplayBtn: $('victoryDailyReplayBtn'),
   nextLevelBtn: $('nextLevelBtn'),
   replayLevelBtn: $('replayLevelBtn'),
   victoryHomeBtn: $('victoryHomeBtn'),
@@ -176,6 +198,7 @@ const elements = {
   rateAppBtn: $('rateAppBtn'),
   contactSupportBtn: $('contactSupportBtn'),
   privacyPolicyBtn: $('privacyPolicyBtn'),
+  viewOnlinePrivacyBtn: $('viewOnlinePrivacyBtn'),
   aboutCreditsBtn: $('aboutCreditsBtn'),
   settingsSubview: $('settingsSubview'),
   subviewPrivacyPolicy: $('subviewPrivacyPolicy'),
@@ -204,7 +227,24 @@ const elements = {
   closeUpdateModalBtn: $('closeUpdateModalBtn'),
   startUpdateBtn: $('startUpdateBtn'),
   restartUpdateBtn: $('restartUpdateBtn'),
-  dismissUpdateBtn: $('dismissUpdateBtn')
+  dismissUpdateBtn: $('dismissUpdateBtn'),
+  hintBtnLabel: $('hintBtnLabel'),
+  hintCountBadge: $('hintCountBadge'),
+  rewardedHintModal: $('rewardedHintModal'),
+  watchHintAdBtn: $('watchHintAdBtn'),
+  closeRewardedHintModalBtn: $('closeRewardedHintModalBtn'),
+  dismissRewardedHintBtn: $('dismissRewardedHintBtn'),
+  claimRewardModal: $('claimRewardModal'),
+  closeClaimRewardModalBtn: $('closeClaimRewardModalBtn'),
+  claimRewardCountVal: $('claimRewardCountVal'),
+  claimUseNowBtn: $('claimUseNowBtn'),
+  claimSaveLaterBtn: $('claimSaveLaterBtn'),
+  exitConfirmModal: $('exitConfirmModal'),
+  exitConfirmTitle: $('exitConfirmTitle'),
+  exitConfirmDesc: $('exitConfirmDesc'),
+  closeExitConfirmBtn: $('closeExitConfirmBtn'),
+  exitResumeBtn: $('exitResumeBtn'),
+  exitLeaveBtn: $('exitLeaveBtn')
 };
 
 // Calendar Viewing State
@@ -239,7 +279,7 @@ const nativeBridge = new NativeBridge({
     if (timelineController) timelineController.pause();
   },
   isGameScreen: () => state.screen === 'game',
-  goToHome: () => goToHomeScreen(),
+  goToHome: () => requestExitToHome(),
   isEditorMode: () => state.mode === 'editor',
   setPlayMode: () => setAppMode('play')
 });
@@ -317,6 +357,93 @@ const engine = new GameEngine(
   nativeBridge
 );
 
+// Achievement System Setup & Celebration Listener
+let currentLevelStartTime = Date.now();
+let currentLevelUndoUsed = false;
+let activeAchievementsCategory = 'all';
+const recentWordCompletionTimes = [];
+
+achievementManager.setOnUnlock(unlocked => {
+  uiManager.showToast(`🏆 Achievement Unlocked: ${unlocked.title}!`, 3200);
+  if (soundFX && soundFX.playStarDrop) soundFX.playStarDrop(3);
+  if (nativeBridge) nativeBridge.triggerHaptic('success');
+});
+
+function evaluateAchievementsOnVictory() {
+  if (state.isTutorial || (state.level && state.level.isTutorial)) return;
+
+  const durationSec = (Date.now() - currentLevelStartTime) / 1000;
+
+  // Campaign Speed Achievements
+  if (!state.isEndless && (!state.level || !state.level.isDaily)) {
+    if (durationSec <= 10) updateAchievementStat('fastClears10s', 1, 'increment');
+    if (durationSec <= 15) updateAchievementStat('fastClears15s', 1, 'increment');
+  }
+
+  // Strategy: One Shot, One Clear (No Undo used)
+  if (!state.undoUsed && !currentLevelUndoUsed) {
+    updateAchievementStat('undoFreeClears', 1, 'increment');
+  }
+
+  // Daily Challenge Achievements
+  if (state.level && state.level.isDaily) {
+    const dailyDateKey = state.level.dateKey || dailyManager.getTodayDateKey();
+    dailyManager.recordCompletion(dailyDateKey, state.moves);
+    updateAchievementStat('dailyTotalSolved', dailyManager.getAllTimeCompletedCount(), 'set');
+    updateAchievementStat('dailyBestStreak', dailyManager.getStreak(), 'max');
+
+    if (durationSec <= 60) {
+      updateAchievementStat('dailySprinter60s', 1, 'increment');
+    }
+
+    if (state.level.isPastArchive) {
+      updateAchievementStat('dailyArchiveSolvedCount', 1, 'increment');
+    }
+
+    const currentHour = new Date().getHours();
+    if (currentHour >= 20 || currentHour < 5) {
+      updateAchievementStat('nightOwlClears', 1, 'increment');
+    }
+  }
+
+  // Endless Arcade Achievements
+  if (state.isEndless || (state.level && state.level.isEndless)) {
+    updateAchievementStat('endlessBestStreak', state.streak, 'max');
+    const endlessTime = Math.floor((Date.now() - currentLevelStartTime) / 1000);
+    updateAchievementStat('endlessMaxTimeSec', endlessTime, 'max');
+  }
+
+  achievementManager.checkAchievements();
+}
+
+engine.setOnMultiChunkMerge(() => {
+  if (state.isTutorial || (state.level && state.level.isTutorial)) return;
+  updateAchievementStat('multiChunkMerges', 1, 'increment');
+  achievementManager.checkAchievements();
+});
+
+engine.setOnWordComplete(() => {
+  if (state.isTutorial || (state.level && state.level.isTutorial)) return;
+  if (state.isEndless || (state.level && state.level.isEndless)) {
+    const endlessTime = Math.floor((Date.now() - currentLevelStartTime) / 1000);
+    updateAchievementStat('endlessMaxTimeSec', endlessTime, 'max');
+  }
+  achievementManager.checkAchievements();
+});
+
+engine.setOnStateChange(st => {
+  hintManager.onStateChanged(st);
+  if (st.isEndless || (st.level && st.level.isEndless)) {
+    const endlessTime = Math.floor((Date.now() - currentLevelStartTime) / 1000);
+    updateAchievementStat('endlessMaxTimeSec', endlessTime, 'max');
+  }
+  if (st.runCompleted) {
+    evaluateAchievementsOnVictory();
+  } else {
+    achievementManager.checkAchievements();
+  }
+});
+
 const tutorialManager = new TutorialManager({
   engine,
   state,
@@ -385,6 +512,10 @@ function startLevel(levelOrId) {
   if (tutorialManager && tutorialManager.active) {
     tutorialManager.exitTutorial();
   }
+  currentLevelStartTime = Date.now();
+  currentLevelUndoUsed = false;
+  hintManager.stopGuidance();
+  refreshHintButtonUI();
   state.screen = 'game';
   uiManager.showGameScreen();
   state.setLevel(levelOrId);
@@ -400,6 +531,7 @@ function goToHomeScreen() {
   if (tutorialManager && tutorialManager.active) {
     tutorialManager.exitTutorial();
   }
+  hintManager.stopGuidance();
   state.screen = 'home';
   timelineController.pause();
   uiManager.showHomeScreen();
@@ -495,17 +627,44 @@ function toggleFullscreen() {
 if (elements.fullscreenBtn) elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
 if (elements.homeFullscreenBtn) elements.homeFullscreenBtn.addEventListener('click', toggleFullscreen);
 
+function requestExitToHome() {
+  if (state.screen !== 'game') {
+    goToHomeScreen();
+    return;
+  }
+
+  if (state.isTutorial || (state.level && state.level.isTutorial) || (tutorialManager && tutorialManager.active)) {
+    tutorialManager.exitTutorial();
+    goToHomeScreen();
+    return;
+  }
+
+  let title = 'Leave Level?';
+  let desc = 'Are you sure you want to return to the main menu? Your progress on this level will be reset.';
+
+  if (state.isEndless || (state.level && state.level.isEndless)) {
+    title = 'Exit Endless Mode?';
+    desc = 'Are you sure you want to leave? Your active endless streak will end.';
+  } else if (state.level && state.level.isDaily) {
+    title = 'Leave Daily Puzzle?';
+    desc = "Are you sure you want to return to the menu? You can continue today's puzzle at any time.";
+  }
+
+  if (soundFX) soundFX.playClick();
+  uiManager.showExitConfirmModal(title, desc);
+}
+
 // Header Navigation & Victory Actions
 if (elements.backToLevelsBtn) {
   elements.backToLevelsBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    goToHomeScreen();
+    requestExitToHome();
   });
 }
 
 if (elements.nextLevelBtn) {
-  elements.nextLevelBtn.addEventListener('click', () => {
+  elements.nextLevelBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
+    await admobManager.onLevelCompleted();
     if (state.isEndless || (state.level && state.level.isEndless)) {
       const seed = Math.floor(1000 + Math.random() * 90000);
       engine.startEndlessMode(seed);
@@ -535,9 +694,70 @@ if (elements.replayLevelBtn) {
 }
 
 if (elements.victoryHomeBtn) {
-  elements.victoryHomeBtn.addEventListener('click', () => {
+  elements.victoryHomeBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
+    await admobManager.onLevelCompleted();
     goToHomeScreen();
+  });
+}
+
+// Daily Challenge Victory Actions
+if (elements.victoryDailyPrevBtn) {
+  elements.victoryDailyPrevBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    if (state.level && state.level.isDaily && state.level.dateKey) {
+      const prevDate = dailyManager.getPreviousDateKey(state.level.dateKey);
+      if (dailyManager.canGoPrevious(state.level.dateKey)) {
+        await admobManager.onLevelCompleted();
+        const prevLevel = dailyManager.generateDailyLevel(prevDate);
+        if (prevDate !== dailyManager.getTodayDateKey()) {
+          prevLevel.isPastArchive = true;
+        }
+        startLevel(prevLevel);
+      }
+    }
+  });
+}
+
+if (elements.victoryDailyNextBtn) {
+  elements.victoryDailyNextBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    if (state.level && state.level.isDaily && state.level.dateKey) {
+      const nextDate = dailyManager.getNextDateKey(state.level.dateKey);
+      if (dailyManager.canGoNext(state.level.dateKey)) {
+        await admobManager.onLevelCompleted();
+        const nextLevel = dailyManager.generateDailyLevel(nextDate);
+        if (nextDate !== dailyManager.getTodayDateKey()) {
+          nextLevel.isPastArchive = true;
+        }
+        startLevel(nextLevel);
+      }
+    }
+  });
+}
+
+if (elements.victoryDailyCalBtn) {
+  elements.victoryDailyCalBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    await admobManager.onLevelCompleted();
+    uiManager.hideVictory();
+    goToHomeScreen();
+    openCalendarModal();
+  });
+}
+
+if (elements.victoryDailyHomeBtn) {
+  elements.victoryDailyHomeBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    await admobManager.onLevelCompleted();
+    goToHomeScreen();
+  });
+}
+
+if (elements.victoryDailyReplayBtn) {
+  elements.victoryDailyReplayBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    startLevel(state.level);
   });
 }
 
@@ -643,18 +863,24 @@ if (elements.homeThemeToggleBtn) {
   });
 }
 
+function openAchievementsModal(category = 'all') {
+  activeAchievementsCategory = category;
+  uiManager.renderAchievementsShowcase(
+    achievementManager,
+    activeAchievementsCategory,
+    selectedCategory => {
+      openAchievementsModal(selectedCategory);
+    }
+  );
+  uiManager.openModal('achievementsModal');
+}
+
 if (elements.homeAchievementsBtn) {
   elements.homeAchievementsBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    uiManager.renderAchievements({
-      bestStreak: state.bestStreak,
-      dailyStreak: dailyManager.getStreak(),
-      completedLevelsCount: state.completedLevels.length,
-      totalCampaignLevels: CAMPAIGN_LEVELS.length,
-      totalWords: state.totalWords,
-      totalStars: getTotalStarsEarned()
-    });
-    uiManager.openModal('achievementsModal');
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+    achievementManager.checkAchievements();
+    openAchievementsModal('all');
   });
 }
 
@@ -831,6 +1057,8 @@ if (elements.settingsRemoveAdsBtn) {
 
     if (result.success) {
       uiManager.updateRemoveAdsButton(true);
+      refreshHintButtonUI();
+      admobManager.hideBanner();
       if (nativeBridge) nativeBridge.triggerHaptic('success');
       uiManager.showToast('Ad-free version unlocked! Thank you!');
     } else if (result.cancelled) {
@@ -880,6 +1108,13 @@ if (elements.privacyPolicyBtn) {
   });
 }
 
+if (elements.viewOnlinePrivacyBtn) {
+  elements.viewOnlinePrivacyBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    window.open('https://sites.google.com/view/rotatle-privacy-policy', '_blank');
+  });
+}
+
 if (elements.aboutCreditsBtn) {
   elements.aboutCreditsBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
@@ -905,11 +1140,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.8)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.12)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.8)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.12)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);
@@ -963,7 +1198,13 @@ if (elements.dismissUpdateBtn) {
 if (elements.moreGamesBtn) {
   elements.moreGamesBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    window.open('https://olaimediagroup.com', '_blank');
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+
+    if (TargetConfig.isPlaystore || Capacitor.isNativePlatform()) {
+      window.open('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios', '_blank');
+    } else {
+      window.open('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios', '_blank');
+    }
   });
 }
 
@@ -980,7 +1221,11 @@ function refreshCalendarView() {
   uiManager.renderCalendarModal(
     dailyManager,
     selectedDateKey => {
+      const todayKey = dailyManager.getTodayDateKey();
       const dailyLevel = dailyManager.generateDailyLevel(selectedDateKey);
+      if (selectedDateKey !== todayKey) {
+        dailyLevel.isPastArchive = true;
+      }
       startLevel(dailyLevel);
     },
     calViewYear,
@@ -1084,33 +1329,176 @@ if (!TargetConfig.features.showEditorToggle) {
   if (elements.endlessBenchmarkBox) elements.endlessBenchmarkBox.style.display = 'none';
 }
 
-function giveHint() {
+function refreshHintButtonUI() {
+  const isAdFree = inAppPurchaseManager.isAdsRemoved();
+  const count = loadHintCount();
+  if (hintManager.isGuidanceActive()) {
+    uiManager.setHintGuidanceState(hintManager.secondsRemaining, count, isAdFree);
+  } else {
+    uiManager.updateHintButton(count, isAdFree);
+  }
+}
+
+function triggerHintGuidance() {
   if (state.screen !== 'game' || state.mode !== 'play' || state.locked) return;
+  if (state.isTutorial || (state.level && state.level.isTutorial) || (tutorialManager && tutorialManager.active)) {
+    uiManager.showToast('Hints are disabled in Tutorial mode');
+    return;
+  }
   if (!state.currentWord || !state.cards || !state.level) return;
 
-  const path = solveBFS(
-    state.currentWord,
-    {
-      r: state.r,
-      cards: state.cards,
-      n: state.level.n,
-      walls: state.level.walls
-    },
-    14,
-    state.level.n,
-    state.level.walls
-  );
+  if (hintManager.isGuidanceActive()) {
+    return;
+  }
+
+  const isAdFree = inAppPurchaseManager.isAdsRemoved();
+  const availableHints = loadHintCount();
+
+  if (!isAdFree && availableHints <= 0) {
+    if (soundFX) soundFX.playClick();
+    uiManager.showRewardedHintModal();
+    return;
+  }
+
+  // Consume 1 hint if not ad-free
+  if (!isAdFree) {
+    consumeHint();
+  }
 
   if (soundFX) soundFX.playClick();
+  if (nativeBridge) nativeBridge.triggerHaptic('medium');
 
-  if (path && path.length > 0) {
-    const nextDir = path[0]; // -1 for left, 1 for right
-    uiManager.highlightHint(nextDir);
-    const dirName = nextDir === -1 ? 'Turn Left ↺' : 'Turn Right ↻';
-    uiManager.setStatus(`💡 <strong>Hint:</strong> ${dirName}`);
+  const started = hintManager.startGuidance(
+    state,
+    {
+      onTick: seconds => {
+        uiManager.setHintGuidanceState(seconds, loadHintCount(), inAppPurchaseManager.isAdsRemoved());
+      },
+      onNextMove: (nextDir, remainingSteps) => {
+        if (nextDir !== null && nextDir !== undefined) {
+          uiManager.highlightHint(nextDir, false);
+          const dirName = nextDir === -1 ? 'Turn Left ↺' : 'Turn Right ↻';
+          uiManager.setStatus(`💡 <strong>Hint:</strong> ${dirName} (${remainingSteps} turn${remainingSteps === 1 ? '' : 's'} to word)`);
+        } else {
+          uiManager.clearHintHighlight();
+          uiManager.setStatus(`💡 <strong>Hint:</strong> No direct path found from here. Try <strong>Undo</strong>!`);
+        }
+      },
+      onEnd: reason => {
+        uiManager.clearHintHighlight();
+        refreshHintButtonUI();
+        if (reason === 'Timer expired') {
+          uiManager.setStatus(`Guidance finished. Spell <strong>${state.currentWord}</strong>!`);
+        }
+      }
+    },
+    10
+  );
+
+  if (started) {
+    refreshHintButtonUI();
   } else {
+    // Refund hint if no solution exists from initial state
+    if (!isAdFree) {
+      addHints(1);
+    }
+    refreshHintButtonUI();
     uiManager.setStatus(`💡 <strong>Hint:</strong> No path found from current position. Try <strong>Undo</strong> or <strong>Restart</strong>!`);
   }
+}
+
+if (elements.hintBtn) {
+  elements.hintBtn.addEventListener('click', () => {
+    triggerHintGuidance();
+  });
+}
+
+// Rewarded Hint Modal Button Handlers
+if (elements.watchHintAdBtn) {
+  elements.watchHintAdBtn.addEventListener('click', async () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('medium');
+    uiManager.hideRewardedHintModal();
+
+    await admobManager.showRewardedAd((granted) => {
+      if (granted) {
+        if (nativeBridge) nativeBridge.triggerHaptic('success');
+        if (soundFX && soundFX.playStarDrop) soundFX.playStarDrop(3);
+        const newTotal = addHints(1);
+        refreshHintButtonUI();
+        uiManager.showClaimRewardModal(newTotal);
+      } else {
+        uiManager.showToast('Video ad ended without completing.');
+      }
+    });
+  });
+}
+
+if (elements.closeRewardedHintModalBtn) {
+  elements.closeRewardedHintModalBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideRewardedHintModal();
+  });
+}
+
+if (elements.dismissRewardedHintBtn) {
+  elements.dismissRewardedHintBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideRewardedHintModal();
+  });
+}
+
+// Claim Reward Modal Actions
+if (elements.claimUseNowBtn) {
+  elements.claimUseNowBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('medium');
+    uiManager.hideClaimRewardModal();
+    setTimeout(() => {
+      triggerHintGuidance();
+    }, 150);
+  });
+}
+
+if (elements.claimSaveLaterBtn) {
+  elements.claimSaveLaterBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+    uiManager.hideClaimRewardModal();
+    uiManager.showToast('Hint saved in inventory! 💡');
+  });
+}
+
+if (elements.closeClaimRewardModalBtn) {
+  elements.closeClaimRewardModalBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideClaimRewardModal();
+  });
+}
+
+// Exit / Leave Game Modal Actions
+if (elements.exitResumeBtn) {
+  elements.exitResumeBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('light');
+    uiManager.hideExitConfirmModal();
+  });
+}
+
+if (elements.exitLeaveBtn) {
+  elements.exitLeaveBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    if (nativeBridge) nativeBridge.triggerHaptic('medium');
+    uiManager.hideExitConfirmModal();
+    goToHomeScreen();
+  });
+}
+
+if (elements.closeExitConfirmBtn) {
+  elements.closeExitConfirmBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideExitConfirmModal();
+  });
 }
 
 // Setup In-App Update Flexible Download Listeners
@@ -1129,8 +1517,13 @@ setupLifecycle({
     if (timelineController && timelineController.isPlaying) {
       timelineController.pause();
     }
+    hintManager.stopGuidance();
+    admobManager.hideBanner();
   },
   onAppForeground: async () => {
+    if (!inAppPurchaseManager.isAdsRemoved()) {
+      admobManager.showBanner();
+    }
     try {
       const updateCheck = await appUpdateManager.checkForUpdate();
       if (updateCheck && updateCheck.downloaded) {
@@ -1148,18 +1541,25 @@ new InputManager(elements, {
     }
   },
   onTurn: dir => {
-    uiManager.clearHintHighlight();
-    if (state.screen === 'game' && state.mode === 'play') engine.turn(dir);
+    if (state.screen === 'game' && state.mode === 'play') {
+      engine.turn(dir);
+    }
   },
   onUndo: () => {
-    uiManager.clearHintHighlight();
-    if (state.screen === 'game' && state.mode === 'play') engine.undo();
+    currentLevelUndoUsed = true;
+    if (state.screen === 'game' && state.mode === 'play') {
+      engine.undo();
+    }
   },
   onHint: () => {
-    giveHint();
+    triggerHintGuidance();
   },
   onRestart: () => {
+    currentLevelStartTime = Date.now();
+    currentLevelUndoUsed = false;
+    hintManager.stopGuidance();
     uiManager.clearHintHighlight();
+    refreshHintButtonUI();
     if (state.screen === 'game') {
       if (state.mode === 'play' || !TargetConfig.features.enableAutoSolver) {
         engine.startInteractiveRun();
@@ -1194,7 +1594,7 @@ new InputManager(elements, {
         return;
       }
       if (state.screen === 'game') {
-        goToHomeScreen();
+        requestExitToHome();
         return;
       }
     }
@@ -1222,10 +1622,13 @@ new InputManager(elements, {
           engine.turn(1);
         } else if (e.key === 'h' || e.key === 'H') {
           e.preventDefault();
-          giveHint();
+          triggerHintGuidance();
         } else if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace') {
           engine.undo();
         } else if (e.key === 'r' || e.key === 'R') {
+          hintManager.stopGuidance();
+          uiManager.clearHintHighlight();
+          refreshHintButtonUI();
           engine.startInteractiveRun();
         }
       } else {
@@ -1256,16 +1659,29 @@ new InputManager(elements, {
   }
 });
 
+// Run Studio Intro splash screen
+runStudioIntro();
+
 // Boot into Home Screen with 3-tier Grid Leap Hub Layout
 goToHomeScreen();
+refreshHintButtonUI();
 
 // Initialize In-App Purchases & sync button state
 inAppPurchaseManager.init().then(() => {
-  uiManager.updateRemoveAdsButton(inAppPurchaseManager.isAdsRemoved());
+  const isAdFree = inAppPurchaseManager.isAdsRemoved();
+  uiManager.updateRemoveAdsButton(isAdFree);
+  refreshHintButtonUI();
+  if (isAdFree) {
+    admobManager.hideBanner();
+  }
 }).catch(err => {
   console.warn('IAP init error:', err);
 });
 uiManager.updateRemoveAdsButton(inAppPurchaseManager.isAdsRemoved());
+refreshHintButtonUI();
+
+// Initialize Google AdMob SDK
+admobManager.init();
 
 // If editor target mode is enabled, auto open editor solver tools
 if (TargetConfig.features.autoOpenEditor) {

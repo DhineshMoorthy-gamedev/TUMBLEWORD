@@ -9,6 +9,7 @@ import { findWin, isCompleted } from '../simulation/winCondition.js';
 import { createWordCards } from '../levels/spawnSystem.js';
 import { createPRNG, getSeededWord, createEndlessWordDeck, ALL_DICTIONARY_WORDS } from '../data/wordDictionary.js';
 import { getEndlessWalls } from '../data/endlessWalls.js';
+import { dailyManager } from '../simulation/dailyManager.js';
 
 export class GameEngine {
   /**
@@ -29,6 +30,21 @@ export class GameEngine {
     this.nextCardId = 1;
     this._queuedTurn = null;
     this.tutorialManager = null;
+    this.onStateChange = null;
+    this.onMultiChunkMerge = null;
+    this.onWordComplete = null;
+  }
+
+  setOnStateChange(cb) {
+    this.onStateChange = cb;
+  }
+
+  setOnMultiChunkMerge(cb) {
+    this.onMultiChunkMerge = cb;
+  }
+
+  setOnWordComplete(cb) {
+    this.onWordComplete = cb;
   }
 
   setTutorialManager(tutorialManager) {
@@ -76,12 +92,12 @@ export class GameEngine {
   }
 
   /**
-   * Start a specific campaign level
-   * @param {number} levelId
+   * Start a specific campaign or daily level
+   * @param {number|object} levelOrId
    */
-  startLevel(levelId) {
+  startLevel(levelOrId) {
     this.state.isEndless = false;
-    this.state.setLevel(levelId);
+    this.state.setLevel(levelOrId);
     this.nextCardId = 1;
     this.uiManager.hideVictory();
     this.uiManager.hideOutOfMoves();
@@ -89,6 +105,8 @@ export class GameEngine {
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('light');
     this.boardRenderer.initGrid(this.state.n, this.state.walls);
     this.spawnCurrentWord(true);
+    this.uiManager.updateLevelHeader(this.state.level);
+    this.uiManager.updateStats(this.state);
   }
 
   /**
@@ -97,8 +115,10 @@ export class GameEngine {
   startInteractiveRun() {
     if (this.state.isEndless) {
       this.startEndlessMode(this.state.endlessSeed || Date.now());
+    } else if (this.state.level) {
+      this.startLevel(this.state.level);
     } else {
-      this.startLevel(this.state.currentLevelId);
+      this.startLevel(this.state.currentLevelId || 1);
     }
   }
 
@@ -205,6 +225,10 @@ export class GameEngine {
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
 
+      if (this.onStateChange) {
+        this.onStateChange(this.state);
+      }
+
       if (this.state.isTutorial && this.tutorialManager) {
         this.tutorialManager.onGameStep('turn');
       }
@@ -230,6 +254,7 @@ export class GameEngine {
   checkOutOfMoves() {
     if (this.state.isTutorial || (this.state.level && this.state.level.isTutorial)) return false;
     if (this.state.isEndless || (this.state.level && this.state.level.isEndless)) return false;
+    if (this.state.level && this.state.level.isDaily) return false;
     if (this.state.runCompleted || this.state.mode !== 'play') return false;
 
     const maxMoves = this.state.getMaxMoves();
@@ -252,6 +277,10 @@ export class GameEngine {
   applyMergeAnimation(merges, newCards) {
     if (this.sound) this.sound.playBond();
     if (this.nativeBridge) this.nativeBridge.triggerHaptic('medium');
+
+    if (merges.length >= 2 && this.onMultiChunkMerge) {
+      this.onMultiChunkMerge(merges);
+    }
 
     const curWord = this.state.level.words[this.state.wordIdx].word;
     const newlyMergedChs = merges.map(m => m.newCh);
@@ -299,6 +328,10 @@ export class GameEngine {
       } else {
         this.state.locked = false;
         this.uiManager.updateStats(this.state);
+
+        if (this.onStateChange) {
+          this.onStateChange(this.state);
+        }
 
         if (this.checkOutOfMoves()) {
           return;
@@ -373,6 +406,9 @@ export class GameEngine {
       this.boardRenderer.render(this.state.cards, this.state.angle);
 
       this.state.incrementStreak();
+      if (this.onWordComplete) {
+        this.onWordComplete(currentWord);
+      }
       this.uiManager.updateStats(this.state);
 
       if (this.state.isEndless) {
@@ -387,6 +423,9 @@ export class GameEngine {
           this.state.runCompleted = true;
           if (this.sound) this.sound.playVictory();
           if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
+          if (this.onStateChange) {
+            this.onStateChange(this.state);
+          }
           this.uiManager.showVictory(
             this.state.moves,
             this.state.streak,
@@ -467,9 +506,12 @@ export class GameEngine {
         const earnedStars = this.state.getCurrentStars();
         if (this.sound) this.sound.playVictory();
         if (this.nativeBridge) this.nativeBridge.triggerHaptic('success');
+        if (this.onStateChange) {
+          this.onStateChange(this.state);
+        }
         const finalCampaignPause = expiredIds.length > 0 ? 1000 : 500;
         setTimeout(() => {
-          this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level, earnedStars, this.sound);
+          this.uiManager.showVictory(this.state.moves, this.state.bestStreak, this.state.level, earnedStars, this.sound, dailyManager);
           this.uiManager.setStatus(
             `🎉 <strong>${this.state.level.name} completed!</strong> Cleared all ${words.length} words in ${this.state.moves} moves (${earnedStars}★).`
           );
@@ -500,6 +542,7 @@ export class GameEngine {
    * Undo previous turn
    */
   undo() {
+    this.state.undoUsed = true;
     if (this.state.outOfMoves) {
       this.state.outOfMoves = false;
       this.state.locked = false;
@@ -540,6 +583,9 @@ export class GameEngine {
     setTimeout(() => {
       this.state.locked = false;
       this.uiManager.updateStats(this.state);
+      if (this.onStateChange) {
+        this.onStateChange(this.state);
+      }
     }, LOCK_MS);
   }
 

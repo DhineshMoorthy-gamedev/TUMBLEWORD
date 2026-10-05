@@ -77,6 +77,37 @@ export class DailyManager {
     return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
+  getPreviousDateKey(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    dt.setDate(dt.getDate() - 1);
+    const prevY = dt.getFullYear();
+    const prevM = String(dt.getMonth() + 1).padStart(2, '0');
+    const prevD = String(dt.getDate()).padStart(2, '0');
+    return `${prevY}-${prevM}-${prevD}`;
+  }
+
+  getNextDateKey(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    dt.setDate(dt.getDate() + 1);
+    const nextY = dt.getFullYear();
+    const nextM = String(dt.getMonth() + 1).padStart(2, '0');
+    const nextD = String(dt.getDate()).padStart(2, '0');
+    return `${nextY}-${nextM}-${nextD}`;
+  }
+
+  canGoPrevious(dateStr) {
+    const prevKey = this.getPreviousDateKey(dateStr);
+    return prevKey >= LAUNCH_DATE;
+  }
+
+  canGoNext(dateStr) {
+    const nextKey = this.getNextDateKey(dateStr);
+    const todayKey = this.getTodayDateKey();
+    return nextKey <= todayKey;
+  }
+
   getTimeUntilMidnight() {
     const now = new Date();
     const midnight = new Date(now);
@@ -103,22 +134,26 @@ export class DailyManager {
    * @param {number} month - 0 to 11
    */
   getMonthCompletionStats(year, month) {
-    const totalDays = new Date(year, month + 1, 0).getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     let completedCount = 0;
+    let availableDays = 0;
     const mStr = String(month + 1).padStart(2, '0');
 
-    for (let d = 1; d <= totalDays; d++) {
+    for (let d = 1; d <= daysInMonth; d++) {
       const dStr = String(d).padStart(2, '0');
       const dateKey = `${year}-${mStr}-${dStr}`;
-      if (this.isDateCompleted(dateKey)) {
-        completedCount++;
+      if (dateKey >= LAUNCH_DATE) {
+        availableDays++;
+        if (this.isDateCompleted(dateKey)) {
+          completedCount++;
+        }
       }
     }
 
     return {
       completedCount,
-      totalDays,
-      fractionStr: `${completedCount} / ${totalDays}`
+      totalDays: availableDays,
+      fractionStr: `${completedCount} / ${availableDays}`
     };
   }
 

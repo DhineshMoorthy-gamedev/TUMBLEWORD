@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Roboto+Slab:wght@700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;1,6..96,400&family=JetBrains+Mono:wght@400;700;800&family=Roboto+Slab:wght@700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles/main.css">
   <script>
     (function() {
@@ -28,6 +28,19 @@
   </script>
 </head>
 <body>
+  <!-- ======================================================== -->
+  <!-- STARTUP STUDIO INTRO OVERLAY                             -->
+  <!-- ======================================================== -->
+  <div id="startupOverlay" class="startup-overlay">
+    <div id="studioScreen" class="startup-slide active">
+      <div class="startup-logo-box">
+        <div class="logo-text-olai">OLAI</div>
+        <div class="logo-text-studios">DIGITAL STUDIOS</div>
+        <div class="logo-presents">presents</div>
+      </div>
+    </div>
+  </div>
+
   <main>
     <!-- ======================================================== -->
     <!-- SCREEN 1: HOME HUB (Grid Leap Style)                     -->
@@ -266,7 +279,8 @@
               <path d="M10 22h4"></path>
               <path d="M15.09 13.72A6 6 0 1 0 8.91 13.72 M12 2v2"></path>
             </svg>
-            <span>Hint</span>
+            <span id="hintBtnLabel">Hint</span>
+            <span class="hint-count-badge" id="hintCountBadge">3</span>
           </button>
 
           <button class="action-btn" id="restart" type="button" title="Restart Level (R)">
@@ -343,41 +357,47 @@
   <!-- MODALS OVERLAYS                                           -->
   <!-- ======================================================== -->
 
-  <!-- 1. ACHIEVEMENTS MODAL -->
+  <!-- 1. ACHIEVEMENTS SHOWCASE MODAL -->
   <div class="modal-overlay" id="achievementsModal" hidden>
-    <div class="modal-card">
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+    <div class="modal-card achievements-showcase-card">
+      <!-- 1. HERO SHOWCASE HEADER (TOP CENTER) -->
+      <div class="achievements-hero-header">
+        <button class="modal-close-btn achievements-close-btn" data-close-modal type="button" aria-label="Close Achievements" title="Close (Esc)">
+          ✕
+          <span class="achievements-esc-badge">ESC</span>
+        </button>
+
+        <div class="achievements-ring-wrapper">
+          <svg class="achievements-ring-svg" viewBox="0 0 72 72">
+            <circle class="ring-bg" cx="36" cy="36" r="30"></circle>
+            <circle class="ring-fill" id="achievementsRingFill" cx="36" cy="36" r="30"></circle>
           </svg>
-          <h3>Achievements &amp; Stats</h3>
+          <div class="achievements-trophy-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+            </svg>
+          </div>
         </div>
-        <button class="modal-close-btn" data-close-modal type="button">✕</button>
+
+        <h3 class="achievements-modal-title">Achievements</h3>
+        <div class="achievements-summary-counter" id="achievementsSummaryCount">
+          0 / 25 Unlocked • 0% Completed
+        </div>
       </div>
-      <div class="modal-body">
-        <div class="achievements-grid">
-          <div class="achievement-box">
-            <span>Total Stars Earned</span>
-            <b id="statsTotalStars">0 / 300 ⭐</b>
-          </div>
-          <div class="achievement-box">
-            <span>Campaign Cleared</span>
-            <b id="statsCampaignCleared">0 / 100</b>
-          </div>
-          <div class="achievement-box">
-            <span>Best Word Streak</span>
-            <b id="statsBestStreak">0</b>
-          </div>
-          <div class="achievement-box">
-            <span>Daily Streak</span>
-            <b id="statsDailyStreak">0 Days</b>
-          </div>
-          <div class="achievement-box">
-            <span>Total Words Solved</span>
-            <b id="statsTotalWords">0</b>
-          </div>
-        </div>
+
+      <!-- 2. HORIZONTAL CATEGORY FILTER TABS BAR -->
+      <div class="achievements-tabs-bar" id="achievementsTabsBar">
+        <button type="button" class="ach-tab-btn active" data-category="all">ALL</button>
+        <button type="button" class="ach-tab-btn" data-category="campaign">CAMPAIGN</button>
+        <button type="button" class="ach-tab-btn" data-category="mastery">MASTERY</button>
+        <button type="button" class="ach-tab-btn" data-category="daily">DAILY</button>
+        <button type="button" class="ach-tab-btn" data-category="strategy">STRATEGY</button>
+        <button type="button" class="ach-tab-btn" data-category="time">TIME</button>
+      </div>
+
+      <!-- 3. SCROLLABLE ACHIEVEMENT ROWS LIST -->
+      <div class="achievements-list-container" id="achievementsListContainer">
+        <!-- Dynamically populated 3-column rows by UIManager -->
       </div>
     </div>
   </div>
@@ -645,7 +665,7 @@
 
           <!-- FOOTER NOTE -->
           <div class="settings-footer">
-            ROTATLE • v0.0.8 • OLAI DIGITAL STUDIOS
+            ROTATLE • v0.0.12 • OLAI DIGITAL STUDIOS
           </div>
         </div>
 
@@ -653,14 +673,51 @@
         <div class="settings-subview" id="settingsSubview" hidden>
           <!-- SUBVIEW: PRIVACY POLICY -->
           <div class="subview-content" id="subviewPrivacyPolicy" hidden>
-            <h3>Privacy Policy</h3>
-            <p class="subview-meta">Last Updated: September 2026</p>
-            <div class="subview-doc">
-              <p><strong>1. Zero Data Collection:</strong> Rotatle does not collect, transmit, store, or sell any personal information or telemetry on external servers.</p>
-              <p><strong>2. Local Device Storage:</strong> Game progress, high scores, streaks, unlocked levels, and audio preferences are saved strictly on your local device via standard browser <code>localStorage</code>.</p>
-              <p><strong>3. 100% Offline Gameplay:</strong> The game functions completely offline without requiring any active internet connection or account creation.</p>
-              <p><strong>4. Children’s Privacy:</strong> Because no personal information is collected, Rotatle complies fully with global privacy regulations including COPPA and GDPR.</p>
-              <p><strong>5. Contact:</strong> If you have any inquiries regarding this policy, contact us at <code>olaidigitalstudios@gmail.com</code>.</p>
+            <div class="privacy-card-container">
+              <h3 class="privacy-card-header">Privacy Policy</h3>
+              <p class="privacy-card-lead">
+                Rotatle is built with a strict offline-first, zero-data-collection philosophy by OLAI Digital Studios.
+              </p>
+
+              <div class="privacy-card-sep"></div>
+
+              <div class="privacy-card-section">
+                <h4 class="privacy-card-section-title">1. Zero Personal Data Collected</h4>
+                <p class="privacy-card-section-text">
+                  We do not collect, store, transmit, or sell any personal information, contacts, photos, camera, or precise geolocation data.
+                </p>
+              </div>
+
+              <div class="privacy-card-section">
+                <h4 class="privacy-card-section-title">2. Local On-Device Storage</h4>
+                <p class="privacy-card-section-text">
+                  All puzzle progress (dynamic N=5, 6, 7, 8 grids), completed words, streaks, optimal move scores, and visual preferences are stored exclusively on your device via standard local storage.
+                </p>
+              </div>
+
+              <div class="privacy-card-section">
+                <h4 class="privacy-card-section-title">3. In-App Purchases &amp; Monetization</h4>
+                <p class="privacy-card-section-text">
+                  In-app purchases (Remove Ads) are processed securely through Google Play Billing. OLAI Digital Studios does not receive, handle, or store any financial credentials.
+                </p>
+              </div>
+
+              <div class="privacy-card-section">
+                <h4 class="privacy-card-section-title">4. Local Device Notifications</h4>
+                <p class="privacy-card-section-text">
+                  Daily Challenge reminders are generated locally on your device without external push servers or tracking tokens.
+                </p>
+              </div>
+
+              <div class="privacy-card-sep"></div>
+
+              <button class="privacy-read-online-btn" id="viewOnlinePrivacyBtn" type="button">
+                <span>Read Full Online Policy</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -670,12 +727,10 @@
               <!-- 1. BRAND IDENTITY BLOCK -->
               <div class="about-brand-section">
                 <div class="about-app-icon-tile">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                  </svg>
+                  <img src="./app_icon_512.png" alt="ROTATLE App Icon" width="80" height="80">
                 </div>
                 <h1 class="about-app-name">ROTATLE</h1>
-                <div class="about-version-badge">v0.0.8</div>
+                <div class="about-version-badge">v0.0.12</div>
               </div>
 
               <!-- 2. DEVELOPER CREDITS (Clean Centered Hierarchy) -->
@@ -776,43 +831,109 @@
   <!-- LEVEL VICTORY OVERLAY -->
   <div class="victory-overlay" id="victoryOverlay" hidden>
     <div class="victory-card">
+      <!-- 1. CAMPAIGN / ENDLESS HEADER & STARS -->
       <div class="victory-stars-row" id="victoryStarsRow">
         <span class="victory-star" id="victoryStar1">★</span>
         <span class="victory-star" id="victoryStar2">★</span>
         <span class="victory-star" id="victoryStar3">★</span>
       </div>
+      
+      <!-- 2. DAILY CHALLENGE ICON EMBLEM -->
+      <div class="victory-daily-emblem" id="victoryDailyEmblem" style="display:none;">
+        <span class="daily-emblem-icon">🏆</span>
+      </div>
+
       <h2 id="victoryTitle">Level Completed!</h2>
       <p class="victory-sub" id="victorySubtitle">All words spelled successfully!</p>
       
-      <div class="victory-stats">
+      <!-- 3. CAMPAIGN 3-STAT BOXES -->
+      <div class="victory-stats" id="victoryCampaignStats">
         <div class="stat-box"><span>Difficulty</span><b id="victoryScore">Score: 120</b></div>
         <div class="stat-box"><span>Your Moves</span><b id="victoryMoves">0</b></div>
         <div class="stat-box"><span>Optimal Benchmark</span><b id="victoryOptimal">9</b></div>
       </div>
 
+      <!-- 4. DAILY 2-STAT CARDS -->
+      <div class="victory-daily-stats-row" id="victoryDailyStats" style="display:none;">
+        <div class="stat-box daily-stat-box">
+          <span>MOVES TAKEN</span>
+          <b id="victoryDailyMoves">25</b>
+        </div>
+        <div class="stat-box daily-stat-box">
+          <span>DAILY STREAK</span>
+          <b id="victoryDailyStreak">🔥 7 Days</b>
+        </div>
+      </div>
+
       <div class="victory-rating-pill" id="victoryRatingPill">⭐⭐⭐ MASTER SCORE</div>
 
-      <div class="victory-actions">
-        <button class="turn next" id="nextLevelBtn" type="button" style="background:var(--goal-color); color:var(--accent-contrast);">
+      <!-- 5. DAILY DATE NAVIGATION BAR (PREV / CALENDAR / NEXT) -->
+      <div class="victory-daily-nav" id="victoryDailyNav" style="display:none;">
+        <button class="daily-nav-btn" id="victoryDailyPrevBtn" type="button" title="Previous Day Puzzle">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Prev Day</span>
+        </button>
+        <button class="daily-nav-btn cal-btn" id="victoryDailyCalBtn" type="button" title="Open Calendar Archive">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Calendar</span>
+        </button>
+        <button class="daily-nav-btn" id="victoryDailyNextBtn" type="button" title="Next Day Puzzle">
+          <span>Next Day</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 6. CAMPAIGN ACTION BUTTONS -->
+      <div class="victory-actions" id="victoryCampaignActions">
+        <button class="turn next victory-btn-primary" id="nextLevelBtn" type="button">
           Next Level
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
-        <div class="row">
-          <button class="ghost" id="replayLevelBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+        <div class="victory-btn-row">
+          <button class="victory-btn-secondary" id="replayLevelBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
-            Replay
+            <span>Replay</span>
           </button>
-          <button class="ghost" id="victoryHomeBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+          <button class="victory-btn-secondary" id="victoryHomeBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
-            Level Select
+            <span>Level Select</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 7. DAILY ACTION BUTTONS -->
+      <div class="victory-actions" id="victoryDailyActions" style="display:none;">
+        <button class="turn next victory-btn-primary" id="victoryDailyHomeBtn" type="button">
+          Return Home
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </button>
+        <div class="victory-btn-row">
+          <button class="victory-btn-secondary" id="victoryDailyReplayBtn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span>Replay Puzzle</span>
           </button>
         </div>
       </div>
@@ -929,6 +1050,144 @@
 
         <button class="update-btn-secondary" id="dismissUpdateBtn" type="button">
           Maybe Later
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REWARDED HINT MODAL -->
+  <div class="modal-overlay" id="rewardedHintModal" hidden>
+    <div class="modal-card rewarded-hint-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#F59E0B;">
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+            <path d="M15.09 13.72A6 6 0 1 0 8.91 13.72 M12 2v2"></path>
+          </svg>
+          <h3>Need a Hint?</h3>
+        </div>
+        <button class="modal-close-btn" id="closeRewardedHintModalBtn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body rewarded-hint-body">
+        <div class="rewarded-hint-banner">
+          <div class="rewarded-hint-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <div class="rewarded-hint-text">
+            <b>Out of Free Hints</b>
+            <span>Watch a short video to unlock 1 Hint with 10s of live step-by-step guidance!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="update-actions">
+        <button class="update-btn-primary rewarded-ad-btn" id="watchHintAdBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Watch Video (+1 Hint)</span>
+        </button>
+
+        <button class="update-btn-secondary" id="dismissRewardedHintBtn" type="button">
+          Maybe Later
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLAIM REWARD / HINT UNLOCKED MODAL -->
+  <div class="modal-overlay" id="claimRewardModal" hidden>
+    <div class="modal-card claim-reward-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#F59E0B;">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <h3>Reward Claimed!</h3>
+        </div>
+        <button class="modal-close-btn" id="closeClaimRewardModalBtn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body claim-reward-body">
+        <div class="claim-reward-emblem">
+          <div class="claim-reward-icon-wrap">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"></path>
+              <path d="M10 22h4"></path>
+              <path d="M15.09 13.72A6 6 0 1 0 8.91 13.72 M12 2v2"></path>
+            </svg>
+            <span class="claim-plus-badge">+1</span>
+          </div>
+        </div>
+
+        <h4 class="claim-reward-title">1 Hint Added to Inventory!</h4>
+        <p class="claim-reward-desc">
+          You earned <b>1 Guidance Hint</b>. Tap below to use it now or save it in your inventory for any level.
+        </p>
+
+        <div class="claim-inventory-pill">
+          <span class="claim-pill-label">Hints Available:</span>
+          <span class="claim-pill-value" id="claimRewardCountVal">1 Available</span>
+        </div>
+      </div>
+
+      <div class="update-actions claim-actions">
+        <button class="update-btn-primary claim-use-btn" id="claimUseNowBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Use Hint Now</span>
+        </button>
+
+        <button class="update-btn-secondary claim-later-btn" id="claimSaveLaterBtn" type="button">
+          Save for Later
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAVE GAME / EXIT CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="exitConfirmModal" hidden>
+    <div class="modal-card exit-confirm-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <h3 id="exitConfirmTitle">Leave Puzzle?</h3>
+        </div>
+        <button class="modal-close-btn" id="closeExitConfirmBtn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body exit-confirm-body">
+        <div class="exit-confirm-emblem">
+          <div class="exit-confirm-icon-wrap">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <p class="exit-confirm-desc" id="exitConfirmDesc">
+          Are you sure you want to return to the main menu?
+        </p>
+      </div>
+
+      <div class="update-actions exit-actions">
+        <button class="update-btn-primary exit-resume-btn" id="exitResumeBtn" type="button">
+          Keep Playing
+        </button>
+
+        <button class="update-btn-secondary exit-leave-btn" id="exitLeaveBtn" type="button">
+          Exit to Menu
         </button>
       </div>
     </div>

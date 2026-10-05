@@ -217,6 +217,96 @@ export function setAdsRemoved(removed = true) {
   } catch (e) {}
 }
 
+const HINT_COUNT_KEY = 'rotatle_hint_count';
+const DEFAULT_FREE_HINTS = 3;
+
+export function loadHintCount() {
+  try {
+    const raw = localStorage.getItem(HINT_COUNT_KEY);
+    if (raw === null) {
+      // First-time player bonus: 3 free starter hints
+      saveHintCount(DEFAULT_FREE_HINTS);
+      return DEFAULT_FREE_HINTS;
+    }
+    const parsed = parseInt(raw, 10);
+    return isNaN(parsed) ? DEFAULT_FREE_HINTS : Math.max(0, parsed);
+  } catch (e) {
+    return DEFAULT_FREE_HINTS;
+  }
+}
+
+export function saveHintCount(count) {
+  try {
+    localStorage.setItem(HINT_COUNT_KEY, String(Math.max(0, Number(count) || 0)));
+  } catch (e) {}
+}
+
+export function consumeHint() {
+  const current = loadHintCount();
+  if (current > 0) {
+    saveHintCount(current - 1);
+    return true;
+  }
+  return false;
+}
+
+export function addHints(amount = 1) {
+  const current = loadHintCount();
+  const next = current + Math.max(1, amount);
+  saveHintCount(next);
+  return next;
+}
+
+const ACHIEVEMENTS_DATA_KEY = 'rotatle_unlocked_achievements';
+const ACHIEVEMENT_STATS_KEY = 'rotatle_achievement_stats';
+
+export function loadUnlockedAchievements() {
+  try {
+    const raw = localStorage.getItem(ACHIEVEMENTS_DATA_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export function saveUnlockedAchievements(data) {
+  try {
+    localStorage.setItem(ACHIEVEMENTS_DATA_KEY, JSON.stringify(data || {}));
+  } catch (e) {}
+}
+
+export function loadAchievementStats() {
+  try {
+    const raw = localStorage.getItem(ACHIEVEMENT_STATS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export function saveAchievementStats(stats) {
+  try {
+    localStorage.setItem(ACHIEVEMENT_STATS_KEY, JSON.stringify(stats || {}));
+  } catch (e) {}
+}
+
+export function updateAchievementStat(key, value, mode = 'set') {
+  try {
+    const stats = loadAchievementStats();
+    if (mode === 'increment') {
+      stats[key] = (stats[key] || 0) + value;
+    } else if (mode === 'max') {
+      stats[key] = Math.max(stats[key] || 0, value);
+    } else {
+      stats[key] = value;
+    }
+    saveAchievementStats(stats);
+    return stats[key];
+  } catch (e) {
+    return value;
+  }
+}
+
 export function clearAllGameData() {
   try {
     localStorage.removeItem(BEST_STREAK_KEY);
@@ -226,8 +316,11 @@ export function clearAllGameData() {
     localStorage.removeItem(LEVEL_STARS_KEY);
     localStorage.removeItem(LEVEL_BEST_MOVES_KEY);
     localStorage.removeItem('rotatle_ads_removed');
+    localStorage.removeItem(HINT_COUNT_KEY);
     localStorage.removeItem('rotatle_daily_data');
     localStorage.removeItem('rotatle_endless_best');
+    localStorage.removeItem(ACHIEVEMENTS_DATA_KEY);
+    localStorage.removeItem(ACHIEVEMENT_STATS_KEY);
     // Also clean up any legacy tumbleword keys if present
     localStorage.removeItem('tumbleword_best_streak');
     localStorage.removeItem('tumbleword_completed_levels');

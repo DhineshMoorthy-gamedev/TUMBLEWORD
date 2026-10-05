@@ -240,16 +240,121 @@ export class UIManager {
   }
 
   /**
-   * Render Achievements & Stats Modal
-   * @param {object} stats
+   * Helper to get vector icon SVG string for achievements
+   * @param {string} iconType
+   * @returns {string}
    */
-  renderAchievements(stats) {
-    const totalLevels = stats.totalCampaignLevels || 100;
-    if (this.el.statsTotalStars) this.el.statsTotalStars.textContent = `${stats.totalStars || 0} / ${totalLevels * 3} ⭐`;
-    if (this.el.statsBestStreak) this.el.statsBestStreak.textContent = String(stats.bestStreak || 0);
-    if (this.el.statsDailyStreak) this.el.statsDailyStreak.textContent = `${stats.dailyStreak || 0} Days`;
-    if (this.el.statsCampaignCleared) this.el.statsCampaignCleared.textContent = `${stats.completedLevelsCount || 0} / ${totalLevels}`;
-    if (this.el.statsTotalWords) this.el.statsTotalWords.textContent = String(stats.totalWords || 0);
+  _getAchievementIconSvg(iconType) {
+    switch (iconType) {
+      case 'zap':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+      case 'star':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+      case 'calendar':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+      case 'flame':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/></svg>`;
+      case 'target':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
+      case 'clock':
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+      case 'lock':
+      default:
+        return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+    }
+  }
+
+  /**
+   * Render the complete Local-Only Achievements Showcase Modal
+   * @param {import('../achievements/achievementManager.js').AchievementManager} achievementManager
+   * @param {string} [activeCategory='all']
+   * @param {(cat: string) => void} [onTabChange]
+   */
+  renderAchievementsShowcase(achievementManager, activeCategory = 'all', onTabChange = null) {
+    const summary = achievementManager.getSummary();
+    const list = achievementManager.getAchievementsList(activeCategory);
+
+    // 1. Update Hero Progress Ring & Stats
+    const ringFill = document.getElementById('achievementsRingFill');
+    const summaryCountEl = document.getElementById('achievementsSummaryCount');
+
+    if (ringFill) {
+      const circumference = 188.5; // 2 * Math.PI * 30
+      const offset = circumference * (1 - (summary.percentage / 100));
+      ringFill.style.strokeDashoffset = String(offset);
+    }
+
+    if (summaryCountEl) {
+      summaryCountEl.textContent = `${summary.unlockedCount} / ${summary.totalCount} Unlocked • ${summary.percentage}% Completed`;
+    }
+
+    // 2. Update Horizontal Tabs Active State
+    const tabsContainer = document.getElementById('achievementsTabsBar');
+    if (tabsContainer) {
+      const tabs = tabsContainer.querySelectorAll('.ach-tab-btn');
+      tabs.forEach(tab => {
+        const cat = tab.getAttribute('data-category');
+        const isActive = cat === activeCategory;
+        tab.classList.toggle('active', isActive);
+
+        if (onTabChange && !tab._boundClick) {
+          tab._boundClick = true;
+          tab.addEventListener('click', () => {
+            const targetCat = tab.getAttribute('data-category');
+            tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            onTabChange(targetCat);
+          });
+        }
+      });
+    }
+
+    // 3. Render 3-Column Achievement Rows
+    const listContainer = document.getElementById('achievementsListContainer');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    list.forEach(ach => {
+      const row = document.createElement('div');
+      row.className = `achievement-row-card${ach.isUnlocked ? ' unlocked' : ''}`;
+
+      // Left Column: Emblem Disc
+      const discIcon = ach.isUnlocked
+        ? this._getAchievementIconSvg(ach.icon)
+        : this._getAchievementIconSvg('lock');
+      const discClass = ach.isUnlocked ? 'ach-emblem-disc unlocked' : 'ach-emblem-disc locked';
+
+      // Center Column: Title + Date + Description
+      const dateHtml = ach.isUnlocked && ach.unlockedAt
+        ? `<span class="ach-card-date">${achievementManager.formatDate(ach.unlockedAt)}</span>`
+        : '';
+
+      // Right Column: Checkmark or Progress Pill
+      let statusHtml = '';
+      if (ach.isUnlocked) {
+        statusHtml = `<div class="ach-unlocked-badge" title="Unlocked">✓</div>`;
+      } else {
+        const unitLabel = ach.target > 1 ? ` ${ach.unit}` : '';
+        statusHtml = `<div class="ach-progress-pill">${ach.currentProgress} / ${ach.target}${unitLabel}</div>`;
+      }
+
+      row.innerHTML = `
+        <div class="${discClass}">
+          ${discIcon}
+        </div>
+        <div class="ach-details-col">
+          <div class="ach-card-top-row">
+            <span class="ach-card-title">${ach.title}</span>
+            ${dateHtml}
+          </div>
+          <p class="ach-card-desc">${ach.description}</p>
+        </div>
+        <div class="ach-status-col">
+          ${statusHtml}
+        </div>
+      `;
+
+      listContainer.appendChild(row);
+    });
   }
 
   /**
@@ -440,6 +545,11 @@ export class UIManager {
       void this.el.currentLevelName.offsetWidth;
       this.el.currentLevelName.classList.add('level-title-enter');
     }
+
+    if (this.el.hintBtn) {
+      this.el.hintBtn.disabled = isTutorial;
+      this.el.hintBtn.title = isTutorial ? 'Hints disabled in Tutorial' : 'Get Guidance Hint';
+    }
   }
 
   /**
@@ -450,6 +560,7 @@ export class UIManager {
   updateStats(gameState, isPlayingTimeline = false) {
     const isTutorial = gameState.isTutorial || (gameState.level && gameState.level.isTutorial);
     const isEndless = gameState.isEndless || (gameState.level && gameState.level.isEndless);
+    const isDaily = !!(gameState.level && gameState.level.isDaily);
     const totalWords = gameState.level ? gameState.level.words.length : 3;
     const currentWordNum = Math.min(gameState.wordIdx + 1, totalWords);
     const optimal = gameState.getOptimalMoves ? gameState.getOptimalMoves() : 10;
@@ -474,6 +585,16 @@ export class UIManager {
       const bestEndless = parseInt(localStorage.getItem('rotatle_endless_best') || localStorage.getItem('tumbleword_endless_best') || '0', 10);
       if (this.el.movesLabel) this.el.movesLabel.textContent = 'BEST';
       if (this.el.moves) this.el.moves.textContent = `🏆 ${Math.max(bestEndless, gameState.streak)}`;
+
+      if (this.el.starGoalsTracker) {
+        this.el.starGoalsTracker.style.display = 'none';
+      }
+    } else if (isDaily) {
+      if (this.el.wordProgressLabel) this.el.wordProgressLabel.textContent = 'WORD';
+      if (this.el.wordProgress) this.el.wordProgress.textContent = `${currentWordNum}/${totalWords}`;
+
+      if (this.el.movesLabel) this.el.movesLabel.textContent = 'MOVES';
+      if (this.el.moves) this.el.moves.textContent = String(moves);
 
       if (this.el.starGoalsTracker) {
         this.el.starGoalsTracker.style.display = 'none';
@@ -542,17 +663,80 @@ export class UIManager {
   }
 
   /**
-   * Highlight recommended turn direction with pulse effect
-   * @param {number} dir - -1 for left, 1 for right
+   * Update hint button badge and label
+   * @param {number} count
+   * @param {boolean} [isAdFree=false]
    */
-  highlightHint(dir) {
+  updateHintButton(count, isAdFree = false) {
+    if (!this.el.hintBtn) return;
+    const badge = document.getElementById('hintCountBadge');
+    const label = document.getElementById('hintBtnLabel');
+
+    if (isAdFree) {
+      if (label) label.textContent = 'Hint';
+      if (badge) {
+        badge.textContent = '∞';
+        badge.classList.remove('reward');
+        badge.title = 'Unlimited hints (Ad-Free)';
+      }
+    } else if (count > 0) {
+      if (label) label.textContent = 'Hint';
+      if (badge) {
+        badge.textContent = String(count);
+        badge.classList.remove('reward');
+        badge.title = `${count} free hints remaining`;
+      }
+    } else {
+      if (label) label.textContent = 'Hint';
+      if (badge) {
+        badge.textContent = '🎬';
+        badge.classList.add('reward');
+        badge.title = 'Watch short video for +1 hint';
+      }
+    }
+  }
+
+  /**
+   * Update hint button during 10-second active guidance
+   * @param {number} secondsRemaining
+   * @param {number} [storedCount=0]
+   * @param {boolean} [isAdFree=false]
+   */
+  setHintGuidanceState(secondsRemaining, storedCount = 0, isAdFree = false) {
+    if (!this.el.hintBtn) return;
+    const badge = document.getElementById('hintCountBadge');
+    const label = document.getElementById('hintBtnLabel');
+
+    if (secondsRemaining > 0) {
+      this.el.hintBtn.classList.add('hint-active');
+      if (label) label.textContent = `${secondsRemaining}s`;
+      if (badge) {
+        badge.textContent = '⚡';
+        badge.classList.remove('reward');
+      }
+    } else {
+      this.el.hintBtn.classList.remove('hint-active');
+      this.updateHintButton(storedCount, isAdFree);
+    }
+  }
+
+  /**
+   * Highlight recommended turn direction with pulse effect
+   * @param {number|null} dir - -1 for left, 1 for right, null to clear
+   * @param {boolean} [autoClear=true]
+   */
+  highlightHint(dir, autoClear = true) {
     this.clearHintHighlight();
+    if (dir === null || dir === undefined) return;
+
     const btn = dir === -1 ? this.el.leftBtn : this.el.rightBtn;
     if (btn) {
       btn.classList.add('hint-pulse');
-      this._hintTimeout = setTimeout(() => {
-        btn.classList.remove('hint-pulse');
-      }, 3500);
+      if (autoClear) {
+        this._hintTimeout = setTimeout(() => {
+          btn.classList.remove('hint-pulse');
+        }, 3500);
+      }
     }
   }
 
@@ -566,6 +750,60 @@ export class UIManager {
     }
     if (this.el.leftBtn) this.el.leftBtn.classList.remove('hint-pulse');
     if (this.el.rightBtn) this.el.rightBtn.classList.remove('hint-pulse');
+  }
+
+  /**
+   * Show rewarded ad hint modal
+   */
+  showRewardedHintModal() {
+    this.openModal('rewardedHintModal');
+  }
+
+  /**
+   * Hide rewarded ad hint modal
+   */
+  hideRewardedHintModal() {
+    this.closeModal('rewardedHintModal');
+  }
+
+  /**
+   * Show claim reward / hint unlocked modal
+   * @param {number} [hintCount=1]
+   */
+  showClaimRewardModal(hintCount = 1) {
+    if (this.el.claimRewardCountVal) {
+      this.el.claimRewardCountVal.textContent = `${hintCount} Available`;
+    }
+    this.openModal('claimRewardModal');
+  }
+
+  /**
+   * Hide claim reward modal
+   */
+  hideClaimRewardModal() {
+    this.closeModal('claimRewardModal');
+  }
+
+  /**
+   * Show exit confirmation modal
+   * @param {string} [title='Leave Puzzle?']
+   * @param {string} [desc='Are you sure you want to return to the main menu?']
+   */
+  showExitConfirmModal(title = 'Leave Puzzle?', desc = 'Are you sure you want to return to the main menu?') {
+    if (this.el.exitConfirmTitle) {
+      this.el.exitConfirmTitle.textContent = title;
+    }
+    if (this.el.exitConfirmDesc) {
+      this.el.exitConfirmDesc.textContent = desc;
+    }
+    this.openModal('exitConfirmModal');
+  }
+
+  /**
+   * Hide exit confirmation modal
+   */
+  hideExitConfirmModal() {
+    this.closeModal('exitConfirmModal');
   }
 
   /**
@@ -734,43 +972,59 @@ export class UIManager {
    * @param {object} [level]
    * @param {number} [earnedStars]
    * @param {import('../audio/SoundFX.js').SoundFXManager} [sound]
+   * @param {import('../simulation/dailyManager.js').DailyManager} [dailyManager]
    */
-  showVictory(moves, bestStreak, level = null, earnedStars = 3, sound = null) {
-    if (this.el.victoryMoves) this.el.victoryMoves.textContent = String(moves);
-    const optimal = level && level.optimalMoves ? level.optimalMoves : 10;
-    if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = String(optimal);
+  showVictory(moves, bestStreak, level = null, earnedStars = 3, sound = null, dailyManager = null) {
+    const isDaily = !!(level && level.isDaily);
+    const isEndless = !!(level && level.isEndless);
+
+    // 1. Toggle mode-specific container sections
+    if (this.el.victoryStarsRow) this.el.victoryStarsRow.style.display = (isDaily || isEndless) ? 'none' : 'flex';
+    if (this.el.victoryDailyEmblem) this.el.victoryDailyEmblem.style.display = isDaily ? 'block' : 'none';
+    if (this.el.victoryCampaignStats) this.el.victoryCampaignStats.style.display = isDaily ? 'none' : 'grid';
+    if (this.el.victoryDailyStats) this.el.victoryDailyStats.style.display = isDaily ? 'grid' : 'none';
+    if (this.el.victoryDailyNav) this.el.victoryDailyNav.style.display = isDaily ? 'flex' : 'none';
+    if (this.el.victoryCampaignActions) this.el.victoryCampaignActions.style.display = isDaily ? 'none' : 'flex';
+    if (this.el.victoryDailyActions) this.el.victoryDailyActions.style.display = isDaily ? 'flex' : 'none';
+    if (this.el.victoryRatingPill) this.el.victoryRatingPill.style.display = isDaily ? 'none' : 'inline-block';
 
     if (level) {
       if (level.isEndless) {
-        if (this.el.victoryTitle) {
-          this.el.victoryTitle.textContent = 'Endless Mode Conquered! 🏆';
-        }
+        if (this.el.victoryTitle) this.el.victoryTitle.textContent = 'Endless Mode Conquered! 🏆';
         if (this.el.victorySubtitle) {
           const totalWordsCount = level.totalWords || 1200;
           this.el.victorySubtitle.textContent = `Incredible mastery! You completed all ${totalWordsCount} words across all 8 tiers!`;
         }
-        if (this.el.victoryScore) {
-          this.el.victoryScore.textContent = `Streak: ${bestStreak || 1200} 🔥`;
-        }
-        if (this.el.victoryOptimal) {
-          this.el.victoryOptimal.textContent = 'All 8 Tiers';
-        }
-        if (this.el.victoryRatingPill) {
-          this.el.victoryRatingPill.textContent = '👑 COSMIC GRAND MASTER';
-        }
+        if (this.el.victoryScore) this.el.victoryScore.textContent = `Streak: ${bestStreak || 1200} 🔥`;
+        if (this.el.victoryMoves) this.el.victoryMoves.textContent = String(moves);
+        if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = 'All 8 Tiers';
+        if (this.el.victoryRatingPill) this.el.victoryRatingPill.textContent = '👑 COSMIC GRAND MASTER';
         if (this.el.nextLevelBtn) {
           this.el.nextLevelBtn.innerHTML = `Play New Seed <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
         }
+      } else if (level.isDaily) {
+        const dateKey = level.dateKey || (dailyManager ? dailyManager.getTodayDateKey() : '');
+        const dateFormatted = dailyManager ? dailyManager.getFormattedDate(dateKey) : 'Daily Challenge';
+        const streak = dailyManager ? dailyManager.getStreak() : 1;
+
+        if (this.el.victoryTitle) this.el.victoryTitle.textContent = 'Daily Puzzle Cleared! 🏆';
+        if (this.el.victorySubtitle) this.el.victorySubtitle.textContent = dateFormatted;
+        if (this.el.victoryDailyMoves) this.el.victoryDailyMoves.textContent = `${moves} Moves`;
+        if (this.el.victoryDailyStreak) this.el.victoryDailyStreak.textContent = `🔥 ${streak} Day${streak === 1 ? '' : 's'}`;
+
+        if (dailyManager) {
+          const hasPrev = dailyManager.canGoPrevious(dateKey);
+          const hasNext = dailyManager.canGoNext(dateKey);
+          if (this.el.victoryDailyPrevBtn) this.el.victoryDailyPrevBtn.disabled = !hasPrev;
+          if (this.el.victoryDailyNextBtn) this.el.victoryDailyNextBtn.disabled = !hasNext;
+        }
       } else {
-        if (this.el.victoryTitle) {
-          this.el.victoryTitle.textContent = `${level.name} Cleared!`;
-        }
-        if (this.el.victorySubtitle) {
-          this.el.victorySubtitle.textContent = `All ${level.words.length} words spelled on ${level.n}×${level.n} grid!`;
-        }
-        if (this.el.victoryScore) {
-          this.el.victoryScore.textContent = `Score: ${level.difficultyScore}`;
-        }
+        if (this.el.victoryTitle) this.el.victoryTitle.textContent = `${level.name} Cleared!`;
+        if (this.el.victorySubtitle) this.el.victorySubtitle.textContent = `All ${level.words.length} words spelled on ${level.n}×${level.n} grid!`;
+        if (this.el.victoryScore) this.el.victoryScore.textContent = `Score: ${level.difficultyScore}`;
+        if (this.el.victoryMoves) this.el.victoryMoves.textContent = String(moves);
+        const optimal = level.optimalMoves ? level.optimalMoves : 10;
+        if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = String(optimal);
         if (this.el.victoryRatingPill) {
           if (earnedStars === 3) {
             this.el.victoryRatingPill.textContent = '⭐⭐⭐ FLAWLESS / OPTIMAL';
@@ -793,14 +1047,16 @@ export class UIManager {
 
     if (this.el.victoryOverlay) this.el.victoryOverlay.hidden = false;
 
-    // Trigger staggered star drop-in animations
-    for (let i = 1; i <= 3; i++) {
-      if (i <= earnedStars) {
-        setTimeout(() => {
-          const starEl = this.el[`victoryStar${i}`];
-          if (starEl) starEl.classList.add('earned');
-          if (sound && sound.playStarDrop) sound.playStarDrop(i);
-        }, i * 260);
+    // Trigger staggered star drop-in animations only for Campaign
+    if (!isDaily && !isEndless) {
+      for (let i = 1; i <= 3; i++) {
+        if (i <= earnedStars) {
+          setTimeout(() => {
+            const starEl = this.el[`victoryStar${i}`];
+            if (starEl) starEl.classList.add('earned');
+            if (sound && sound.playStarDrop) sound.playStarDrop(i);
+          }, i * 260);
+        }
       }
     }
   }
@@ -810,6 +1066,10 @@ export class UIManager {
    */
   hideVictory() {
     if (this.el.victoryOverlay) this.el.victoryOverlay.hidden = true;
+    const starsContainer = this.el.victoryStar1 ? this.el.victoryStar1.parentElement : null;
+    if (starsContainer) {
+      starsContainer.style.display = 'flex';
+    }
     [this.el.victoryStar1, this.el.victoryStar2, this.el.victoryStar3].forEach(s => {
       if (s) s.classList.remove('earned');
     });
