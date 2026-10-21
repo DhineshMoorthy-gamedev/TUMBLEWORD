@@ -16,8 +16,8 @@ export const TargetConfig = {
     showEditorToggle: APP_TARGET === 'editor',
     autoOpenEditor: APP_TARGET === 'editor',
 
-    // Campaign level cards drawer strictly gated to editor target
-    showCampaignLevelCards: APP_TARGET === 'editor',
+    // Campaign level cards selector enabled across all targets
+    showCampaignLevelCards: true,
 
     // Fullscreen control button on desktop/itch & web builds
     enableFullscreenAPI: APP_TARGET === 'itch' || APP_TARGET === 'web',

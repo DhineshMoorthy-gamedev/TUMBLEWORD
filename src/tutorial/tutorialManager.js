@@ -28,20 +28,67 @@ export class TutorialManager {
    * @returns {boolean}
    */
   static isCompleted() {
-    return localStorage.getItem('tumbleword_tutorial_completed') === 'true';
+    try {
+      return localStorage.getItem('tumbleword_tutorial_completed') === 'true';
+    } catch (_) {
+      return false;
+    }
   }
 
   /**
    * Mark tutorial as completed in local storage
    */
   static markCompleted() {
-    localStorage.setItem('tumbleword_tutorial_completed', 'true');
+    try {
+      localStorage.setItem('tumbleword_tutorial_completed', 'true');
+    } catch (_) {}
+  }
+
+  /**
+   * Check if the player has previously seen or completed the tutorial intro
+   * @returns {boolean}
+   */
+  static hasSeenIntro() {
+    try {
+      if (localStorage.getItem('rotatle_has_seen_tutorial_intro') === 'true') return true;
+      if (localStorage.getItem('tumbleword_has_seen_tutorial_intro') === 'true') return true;
+      if (localStorage.getItem('tumbleword_tutorial_completed') === 'true') return true;
+    } catch (_) {}
+    return false;
+  }
+
+  /**
+   * Mark the tutorial intro as seen in local storage so it is shown only once
+   */
+  static markIntroSeen() {
+    try {
+      localStorage.setItem('rotatle_has_seen_tutorial_intro', 'true');
+    } catch (_) {}
+  }
+
+  /**
+   * Determine if the user is a first-time newly installed user
+   * @param {object} [options]
+   * @param {Array} [options.completedLevels]
+   * @param {number} [options.unlockedLevel]
+   * @param {number} [options.bestStreak]
+   * @returns {boolean}
+   */
+  static isFirstTimeUser({ completedLevels = [], unlockedLevel = 1, bestStreak = 0 } = {}) {
+    if (TutorialManager.hasSeenIntro()) return false;
+    // If the player already has game progress, treat as existing user and silently mark seen
+    if ((completedLevels && completedLevels.length > 0) || unlockedLevel > 1 || bestStreak > 0) {
+      TutorialManager.markIntroSeen();
+      return false;
+    }
+    return true;
   }
 
   /**
    * Show the Welcome Modal
    */
   openWelcomeModal() {
+    TutorialManager.markIntroSeen();
     this.uiManager.openModal('tutorialWelcomeModal');
   }
 
@@ -185,6 +232,8 @@ export class TutorialManager {
   finishTutorial() {
     this.active = false;
     this.state.isTutorial = false;
+    TutorialManager.markIntroSeen();
+    TutorialManager.markIntroSeen();
     TutorialManager.markCompleted();
 
     if (this.el.gameScreen) {

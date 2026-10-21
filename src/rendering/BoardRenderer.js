@@ -15,6 +15,34 @@ export class BoardRenderer {
     this.n = 5;
     this.walls = [];
     this.currentAngle = 0;
+    this._initResponsiveSizing();
+  }
+
+  /**
+   * Keep board strictly fitted within stage bounds across all orientations & aspect ratios
+   * @private
+   */
+  _initResponsiveSizing() {
+    if (!this.stageEl || !this.boardEl) return;
+    const updateSize = () => {
+      const sw = this.stageEl.clientWidth;
+      const sh = this.stageEl.clientHeight;
+      if (sw > 0 && sh > 0) {
+        const fit = Math.floor(Math.min(sw, sh) - 4);
+        const boardSize = Math.max(160, Math.min(fit, 340));
+        this.boardEl.style.width = `${boardSize}px`;
+        this.boardEl.style.height = `${boardSize}px`;
+      }
+    };
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => updateSize());
+      ro.observe(this.stageEl);
+    } else {
+      window.addEventListener('resize', updateSize, { passive: true });
+      window.addEventListener('orientationchange', updateSize, { passive: true });
+    }
+    // Initial evaluation
+    requestAnimationFrame(updateSize);
   }
 
   /**

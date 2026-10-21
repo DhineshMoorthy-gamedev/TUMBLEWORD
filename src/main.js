@@ -22,6 +22,7 @@ import {
 } from './simulation/endlessSimulator.js';
 import { getEndlessWalls } from './data/endlessWalls.js';
 import { TutorialManager } from './tutorial/tutorialManager.js';
+import { Level1TourController } from './tutorial/level1Tour.js';
 import { notificationManager } from './platform/notificationManager.js';
 import { appUpdateManager } from './platform/appUpdateManager.js';
 import { inAppPurchaseManager } from './platform/inAppPurchaseManager.js';
@@ -50,7 +51,6 @@ const elements = {
   gameScreen: $('gameScreen'),
   levelGrid: $('levelGrid'),
   levelsDrawerSection: $('levelsDrawerSection'),
-  browseLevelsBtn: $('browseLevelsBtn'),
   levelsProgressCount: $('levelsProgressCount'),
   dailyStreakBadge: $('dailyStreakBadge'),
   dailyCardTitle: $('dailyCardTitle'),
@@ -74,6 +74,10 @@ const elements = {
   heroLevelTitle: $('heroLevelTitle'),
   heroLevelSub: $('heroLevelSub'),
   heroPlayBtn: $('heroPlayBtn'),
+  campaignLevelSelectBtn: $('campaignLevelSelectBtn'),
+  campaignLevelsModal: $('campaignLevelsModal'),
+  modalLevelGrid: $('modalLevelGrid'),
+  levelsTabsBar: $('levelsTabsBar'),
   backToLevelsBtn: $('backToLevelsBtn'),
   currentLevelName: $('currentLevelName'),
   currentSeedBadge: $('currentSeedBadge'),
@@ -213,12 +217,22 @@ const elements = {
   calStatLiveStreak: $('calStatLiveStreak'),
   calStatAllTime: $('calStatAllTime'),
   calendarDaysGrid: $('calendarDaysGrid'),
+  levelTourOverlay: $('levelTourOverlay'),
+  levelTourBackdrop: $('levelTourBackdrop'),
+  levelTourSpotlight: $('levelTourSpotlight'),
+  levelTourCard: $('levelTourCard'),
+  levelTourStepBadge: $('levelTourStepBadge'),
+  levelTourTitle: $('levelTourTitle'),
+  levelTourDesc: $('levelTourDesc'),
+  levelTourNextBtn: $('levelTourNextBtn'),
+  levelTourSkipBtn: $('levelTourSkipBtn'),
   tutorialWelcomeModal: $('tutorialWelcomeModal'),
   tutorialOutroModal: $('tutorialOutroModal'),
   tutorialPromptBanner: $('tutorialPromptBanner'),
   tutorialStepIndicator: $('tutorialStepIndicator'),
   tutorialPromptText: $('tutorialPromptText'),
   startTutorialBtn: $('startTutorialBtn'),
+  closeTutorialWelcomeBtn: $('closeTutorialWelcomeBtn'),
   exitTutorialBtn: $('exitTutorialBtn'),
   outroPlayLevel1Btn: $('outroPlayLevel1Btn'),
   outroPlayEndlessBtn: $('outroPlayEndlessBtn'),
@@ -362,11 +376,20 @@ let currentLevelStartTime = Date.now();
 let currentLevelUndoUsed = false;
 let activeAchievementsCategory = 'all';
 const recentWordCompletionTimes = [];
+let lastAchievementSoundTime = 0;
 
 achievementManager.setOnUnlock(unlocked => {
   uiManager.showToast(`🏆 Achievement Unlocked: ${unlocked.title}!`, 3200);
-  if (soundFX && soundFX.playStarDrop) soundFX.playStarDrop(3);
-  if (nativeBridge) nativeBridge.triggerHaptic('success');
+  const now = Date.now();
+  if (now - lastAchievementSoundTime > 500) {
+    if (soundFX && soundFX.playAchievement) {
+      soundFX.playAchievement();
+    } else if (soundFX && soundFX.playStarDrop) {
+      soundFX.playStarDrop(3);
+    }
+    lastAchievementSoundTime = now;
+  }
+  if (nativeBridge) nativeBridge.triggerHaptic('light');
 });
 
 function evaluateAchievementsOnVictory() {
@@ -454,6 +477,14 @@ const tutorialManager = new TutorialManager({
 });
 engine.setTutorialManager(tutorialManager);
 
+const level1Tour = new Level1TourController({
+  uiManager,
+  state,
+  sound: soundFX,
+  nativeBridge,
+  elements
+});
+
 let fullTimeline = [];
 let totalTimelineMoves = 0;
 
@@ -512,6 +543,9 @@ function startLevel(levelOrId) {
   if (tutorialManager && tutorialManager.active) {
     tutorialManager.exitTutorial();
   }
+  if (level1Tour && level1Tour.active) {
+    level1Tour.finishTour();
+  }
   currentLevelStartTime = Date.now();
   currentLevelUndoUsed = false;
   hintManager.stopGuidance();
@@ -525,11 +559,23 @@ function startLevel(levelOrId) {
   if (state.mode === 'editor') {
     loadLevelTimeline(state.level);
   }
+
+  // Check and trigger first-time focused spotlight tour on Level 1
+  if (Level1TourController.shouldRun(state)) {
+    setTimeout(() => {
+      if (Level1TourController.shouldRun(state)) {
+        level1Tour.startTour();
+      }
+    }, 180);
+  }
 }
 
 function goToHomeScreen() {
   if (tutorialManager && tutorialManager.active) {
     tutorialManager.exitTutorial();
+  }
+  if (level1Tour && level1Tour.active) {
+    level1Tour.finishTour();
   }
   hintManager.stopGuidance();
   state.screen = 'home';
@@ -885,17 +931,18 @@ if (elements.homeAchievementsBtn) {
 }
 
 // Out of Moves Action Handlers
-if (elements.outOfMovesUndoBtn) {
-  elements.outOfMovesUndoBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    engine.undo();
-  });
-}
-
 if (elements.outOfMovesRestartBtn) {
   elements.outOfMovesRestartBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    uiManager.hideOutOfMoves();
     engine.startInteractiveRun();
+    if (Level1TourController.shouldRun(state)) {
+      setTimeout(() => {
+        if (Level1TourController.shouldRun(state)) {
+          level1Tour.startTour();
+        }
+      }, 180);
+    }
   });
 }
 
@@ -917,7 +964,28 @@ if (elements.homeHelpBtn) {
 if (elements.startTutorialBtn) {
   elements.startTutorialBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    TutorialManager.markIntroSeen();
     tutorialManager.startTutorial();
+  });
+}
+
+if (elements.levelTourNextBtn) {
+  elements.levelTourNextBtn.addEventListener('click', () => {
+    level1Tour.nextStep();
+  });
+}
+
+if (elements.levelTourSkipBtn) {
+  elements.levelTourSkipBtn.addEventListener('click', () => {
+    level1Tour.skipTour();
+  });
+}
+
+if (elements.closeTutorialWelcomeBtn) {
+  elements.closeTutorialWelcomeBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    TutorialManager.markIntroSeen();
+    uiManager.closeModal('tutorialWelcomeModal');
   });
 }
 
@@ -1128,6 +1196,7 @@ if (elements.checkForUpdatesBtn) {
     if (nativeBridge) nativeBridge.triggerHaptic('light');
 
     uiManager.setCheckUpdatesLoading(true);
+    userDismissedUpdateModal = false;
 
     try {
       const result = await appUpdateManager.checkForUpdate();
@@ -1140,11 +1209,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.12)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.15)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.12)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.15)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);
@@ -1181,17 +1250,23 @@ if (elements.restartUpdateBtn) {
   });
 }
 
+let userDismissedUpdateModal = false;
+
 if (elements.closeUpdateModalBtn) {
   elements.closeUpdateModalBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    userDismissedUpdateModal = true;
     uiManager.hideAppUpdateModal();
+    checkFirstTimeTutorialIntro();
   });
 }
 
 if (elements.dismissUpdateBtn) {
   elements.dismissUpdateBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
+    userDismissedUpdateModal = true;
     uiManager.hideAppUpdateModal();
+    checkFirstTimeTutorialIntro();
   });
 }
 
@@ -1273,6 +1348,36 @@ if (elements.dailyCalendarBtn) {
   });
 }
 
+// Campaign Levels Modal State & Handlers
+let currentLevelsTier = 'all';
+
+function openCampaignLevelsModal(targetTier = 'all') {
+  currentLevelsTier = targetTier;
+  refreshCampaignLevelsView();
+  uiManager.openModal('campaignLevelsModal');
+}
+
+function refreshCampaignLevelsView() {
+  uiManager.renderCampaignLevelsModal(
+    CAMPAIGN_LEVELS,
+    levelId => {
+      if (soundFX) soundFX.playClick();
+      uiManager.closeModal('campaignLevelsModal');
+      startLevel(levelId);
+    },
+    state.currentLevelId,
+    state.completedLevels,
+    state.levelStars,
+    state.unlockedLevel,
+    currentLevelsTier,
+    tier => {
+      if (soundFX) soundFX.playClick();
+      currentLevelsTier = tier;
+      refreshCampaignLevelsView();
+    }
+  );
+}
+
 // Campaign Hero Actions
 if (elements.heroPlayBtn) {
   elements.heroPlayBtn.addEventListener('click', () => {
@@ -1282,10 +1387,10 @@ if (elements.heroPlayBtn) {
   });
 }
 
-if (elements.browseLevelsBtn) {
-  elements.browseLevelsBtn.addEventListener('click', () => {
+if (elements.campaignLevelSelectBtn) {
+  elements.campaignLevelSelectBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    uiManager.toggleLevelsDrawer();
+    openCampaignLevelsModal();
   });
 }
 
@@ -1300,6 +1405,10 @@ document.querySelectorAll('[data-close-modal]').forEach(btn => {
 document.querySelectorAll('.modal-overlay').forEach(modal => {
   modal.addEventListener('click', e => {
     if (e.target === modal) {
+      // Game-over and victory modals cannot be dismissed by clicking the background
+      if (modal.id === 'outOfMovesModal' || modal.id === 'victoryOverlay') {
+        return;
+      }
       if (soundFX) soundFX.playClick();
       uiManager.closeAllModals();
     }
@@ -1307,12 +1416,10 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 });
 
 // Feature Gating based on TargetConfig
-if (!TargetConfig.features.showCampaignLevelCards) {
-  if (elements.browseLevelsBtn) elements.browseLevelsBtn.style.display = 'none';
+if (!TargetConfig.isEditor) {
   if (elements.levelsDrawerSection) elements.levelsDrawerSection.style.display = 'none';
 } else {
-  // In editor mode, show the campaign levels list directly for quick developer navigation
-  if (elements.browseLevelsBtn) elements.browseLevelsBtn.style.display = 'flex';
+  // In editor mode, show the campaign levels drawer directly for quick developer navigation
   if (elements.levelsDrawerSection) elements.levelsDrawerSection.hidden = false;
 }
 
@@ -1526,8 +1633,13 @@ setupLifecycle({
     }
     try {
       const updateCheck = await appUpdateManager.checkForUpdate();
-      if (updateCheck && updateCheck.downloaded) {
-        uiManager.showToast('Update ready to install! Open About to restart.');
+      if (updateCheck && updateCheck.available) {
+        if (updateCheck.downloaded) {
+          uiManager.showAppUpdateModal(updateCheck.info || {});
+          uiManager.setUpdateReadyToRestart();
+        } else if (!userDismissedUpdateModal) {
+          uiManager.showAppUpdateModal(updateCheck.info || {});
+        }
       }
     } catch (e) {}
   }
@@ -1541,20 +1653,32 @@ new InputManager(elements, {
     }
   },
   onTurn: dir => {
+    if (level1Tour && level1Tour.active) return;
+    if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) return;
+    if (elements.victoryOverlay && !elements.victoryOverlay.hidden) return;
     if (state.screen === 'game' && state.mode === 'play') {
       engine.turn(dir);
     }
   },
   onUndo: () => {
+    if (level1Tour && level1Tour.active) return;
+    if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) return;
+    if (elements.victoryOverlay && !elements.victoryOverlay.hidden) return;
     currentLevelUndoUsed = true;
     if (state.screen === 'game' && state.mode === 'play') {
       engine.undo();
     }
   },
   onHint: () => {
+    if (level1Tour && level1Tour.active) return;
+    if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) return;
+    if (elements.victoryOverlay && !elements.victoryOverlay.hidden) return;
     triggerHintGuidance();
   },
   onRestart: () => {
+    if (level1Tour && level1Tour.active) return;
+    if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) return;
+    if (elements.victoryOverlay && !elements.victoryOverlay.hidden) return;
     currentLevelStartTime = Date.now();
     currentLevelUndoUsed = false;
     hintManager.stopGuidance();
@@ -1563,12 +1687,32 @@ new InputManager(elements, {
     if (state.screen === 'game') {
       if (state.mode === 'play' || !TargetConfig.features.enableAutoSolver) {
         engine.startInteractiveRun();
+        if (Level1TourController.shouldRun(state)) {
+          setTimeout(() => {
+            if (Level1TourController.shouldRun(state)) {
+              level1Tour.startTour();
+            }
+          }, 180);
+        }
       } else {
         setAppMode('editor');
       }
     }
   },
   onKeyDown: e => {
+    if (level1Tour && level1Tour.active) {
+      if (e.key === 'Escape') {
+        level1Tour.skipTour();
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        level1Tour.nextStep();
+        return;
+      }
+      return;
+    }
+
     // 1. Settings subview Esc handling
     if (e.key === 'Escape') {
       if (uiManager.isSettingsSubviewOpen()) {
@@ -1585,7 +1729,6 @@ new InputManager(elements, {
         return;
       }
       if (elements.outOfMovesModal && !elements.outOfMovesModal.hidden) {
-        engine.undo();
         return;
       }
       if (elements.victoryOverlay && !elements.victoryOverlay.hidden) {
@@ -1659,8 +1802,43 @@ new InputManager(elements, {
   }
 });
 
-// Run Studio Intro splash screen
-runStudioIntro();
+// Start checking for in-app updates in parallel with startup splash
+const startupUpdatePromise = appUpdateManager.checkForUpdate().catch(err => {
+  console.warn('Startup in-app update check error:', err);
+  return { available: false };
+});
+
+function checkFirstTimeTutorialIntro() {
+  if (TutorialManager.isFirstTimeUser({
+    completedLevels: state.completedLevels,
+    unlockedLevel: state.unlockedLevel,
+    bestStreak: state.bestStreak
+  })) {
+    TutorialManager.markIntroSeen();
+    tutorialManager.openWelcomeModal();
+  }
+}
+
+// Run Studio Intro splash screen and automatically prompt update modal when available
+runStudioIntro(async () => {
+  try {
+    const updateResult = await startupUpdatePromise;
+    if (updateResult && updateResult.available) {
+      if (updateResult.downloaded) {
+        uiManager.showAppUpdateModal(updateResult.info || {});
+        uiManager.setUpdateReadyToRestart();
+      } else {
+        uiManager.showAppUpdateModal(updateResult.info || {});
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('Startup update prompt error:', err);
+  }
+
+  // Automatically display How to Play / Tutorial intro popup for first-time newly installed users
+  checkFirstTimeTutorialIntro();
+});
 
 // Boot into Home Screen with 3-tier Grid Leap Hub Layout
 goToHomeScreen();

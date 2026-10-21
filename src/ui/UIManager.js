@@ -61,6 +61,140 @@ export class UIManager {
   }
 
   /**
+   * Render the Campaign Level Selector Modal with tier filter and locked status
+   * @param {Array<object>} levels All campaign levels
+   * @param {(levelId: number) => void} onSelectLevel Callback when level clicked
+   * @param {number} activeLevelId Currently active level
+   * @param {Array<number>} completedLevels List of completed level IDs
+   * @param {Record<number, number>} levelStars Star ratings map
+   * @param {number} unlockedLevel Highest level unlocked
+   * @param {string} [activeTier='all'] Currently selected tier tab ('all' or 'Casual', etc.)
+   * @param {(tier: string) => void} [onTierChange] Callback when tier tab is clicked
+   */
+  renderCampaignLevelsModal(
+    levels,
+    onSelectLevel,
+    activeLevelId = 1,
+    completedLevels = [],
+    levelStars = {},
+    unlockedLevel = 1,
+    activeTier = 'all',
+    onTierChange = null
+  ) {
+    const summaryBadge = document.getElementById('campaignLevelsSummaryBadge');
+    if (summaryBadge) {
+      let totalStars = 0;
+      Object.values(levelStars).forEach(s => { totalStars += (s || 0); });
+      summaryBadge.textContent = `★ ${totalStars} / 300 Stars • ${completedLevels.length} / ${levels.length} Cleared`;
+    }
+
+    // 1. Update Tier Filter Tabs
+    const tabsContainer = document.getElementById('levelsTabsBar');
+    if (tabsContainer) {
+      if (!tabsContainer._wheelBound) {
+        tabsContainer._wheelBound = true;
+        tabsContainer.addEventListener('wheel', e => {
+          if (e.deltaY !== 0) {
+            e.preventDefault();
+            tabsContainer.scrollLeft += e.deltaY;
+          }
+        }, { passive: false });
+      }
+
+      const tabs = tabsContainer.querySelectorAll('.level-tab-btn');
+      tabs.forEach(tab => {
+        const tier = tab.getAttribute('data-tier');
+        const isActive = tier === activeTier;
+        tab.classList.toggle('active', isActive);
+
+        if (onTierChange && !tab._boundClick) {
+          tab._boundClick = true;
+          tab.addEventListener('click', () => {
+            const targetTier = tab.getAttribute('data-tier');
+            tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            onTierChange(targetTier);
+          });
+        }
+      });
+    }
+
+    // 2. Filter levels
+    const filteredLevels = activeTier === 'all'
+      ? levels
+      : levels.filter(lvl => lvl.difficultyTier === activeTier);
+
+    // 3. Render Level Cards Grid
+    const grid = document.getElementById('modalLevelGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    let activeCardEl = null;
+
+    filteredLevels.forEach(lvl => {
+      const card = document.createElement('button');
+      const isCompleted = completedLevels.includes(lvl.id);
+      const isActive = lvl.id === activeLevelId;
+      const isUnlocked = lvl.id <= unlockedLevel;
+      const stars = levelStars[lvl.id] || 0;
+
+      let starsHtml = '';
+      if (stars > 0) {
+        starsHtml = `
+          <span class="modal-level-stars">
+            ${'★'.repeat(stars)}${'<span class="empty-star">★</span>'.repeat(3 - stars)}
+          </span>
+        `;
+      } else if (isUnlocked) {
+        starsHtml = `
+          <span class="modal-level-stars">
+            <span class="empty-star">★★★</span>
+          </span>
+        `;
+      }
+
+      card.className = `modal-level-card${isActive ? ' active-target' : ''}${isCompleted ? ' completed' : ''}${!isUnlocked ? ' locked' : ''}`;
+      card.type = 'button';
+      if (!isUnlocked) {
+        card.setAttribute('aria-disabled', 'true');
+      }
+
+      const numStr = String(lvl.id).padStart(3, '0');
+
+      card.innerHTML = `
+        <div class="modal-level-card-top">
+          <span class="modal-level-num">${numStr}</span>
+          ${isUnlocked ? starsHtml : '<span class="modal-level-lock-badge">🔒 Locked</span>'}
+        </div>
+        <div class="modal-level-title" title="${lvl.name}">${lvl.name}</div>
+        <div class="modal-level-meta">
+          <span>${lvl.words.length} Words</span>
+          <span class="modal-level-grid-tag">${lvl.n}×${lvl.n}</span>
+        </div>
+      `;
+
+      if (isActive && isUnlocked) {
+        activeCardEl = card;
+      }
+
+      card.addEventListener('click', () => {
+        if (!isUnlocked) {
+          return;
+        }
+        onSelectLevel(lvl.id);
+      });
+
+      grid.appendChild(card);
+    });
+
+    // Auto-scroll to active target card if present (vertically only)
+    if (activeCardEl) {
+      setTimeout(() => {
+        activeCardEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }, 80);
+    }
+  }
+
+  /**
    * Render the Center Hero Launch Card
    * @param {object} level
    * @param {boolean} isContinue
@@ -388,12 +522,12 @@ export class UIManager {
   }
 
   closeAllModals() {
-    const modals = document.querySelectorAll('.modal-overlay');
+    const modals = document.querySelectorAll('.modal-overlay:not(#outOfMovesModal):not(#victoryOverlay)');
     modals.forEach(m => m.hidden = true);
   }
 
   getActiveModal() {
-    const modals = Array.from(document.querySelectorAll('.modal-overlay'));
+    const modals = Array.from(document.querySelectorAll('.modal-overlay:not(#outOfMovesModal):not(#victoryOverlay)'));
     return modals.find(m => !m.hidden) || null;
   }
 
@@ -429,7 +563,11 @@ export class UIManager {
     if (versionTag && updateInfo.availableVersionName) {
       versionTag.textContent = `v${updateInfo.availableVersionName} Available`;
     } else if (versionTag && updateInfo.availableVersionCode) {
-      versionTag.textContent = `Build ${updateInfo.availableVersionCode} Available`;
+      const vCode = updateInfo.availableVersionCode;
+      const displayVersion = String(vCode).includes('.') ? `v${vCode}` : `v0.0.${vCode}`;
+      versionTag.textContent = `${displayVersion} Available`;
+    } else if (versionTag) {
+      versionTag.textContent = 'New Update Available';
     }
 
     if (progressSection) progressSection.hidden = true;
@@ -615,23 +753,14 @@ export class UIManager {
       if (this.el.starIcon2) this.el.starIcon2.classList.toggle('active', currentStars >= 2);
       if (this.el.starIcon3) this.el.starIcon3.classList.toggle('active', currentStars >= 3);
 
-      // Update Minimal Context Goal Label
+      // Update Minimal Context Goal Label (stable, invariant wordings)
       if (this.el.trackerNote) {
-        if (moves < optimal) {
-          const diff = optimal - moves;
-          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 3 Stars`;
-        } else if (moves === optimal) {
-          this.el.trackerNote.textContent = 'Last move for 3 Stars!';
-        } else if (moves < twoStarLimit) {
-          const diff = twoStarLimit - moves;
-          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 2 Stars`;
-        } else if (moves === twoStarLimit) {
-          this.el.trackerNote.textContent = 'Last move for 2 Stars!';
-        } else if (moves < maxMoves) {
-          const diff = maxMoves - moves;
-          this.el.trackerNote.textContent = `Solve in ${diff} move${diff === 1 ? '' : 's'} for 1 Star`;
-        } else if (moves === maxMoves) {
-          this.el.trackerNote.textContent = 'Final move to clear level!';
+        if (currentStars === 3) {
+          this.el.trackerNote.textContent = `Solve within ${optimal} moves for 3 Stars`;
+        } else if (currentStars === 2) {
+          this.el.trackerNote.textContent = `Solve within ${twoStarLimit} moves for 2 Stars`;
+        } else if (currentStars === 1) {
+          this.el.trackerNote.textContent = `Solve within ${maxMoves} moves for 1 Star`;
         } else {
           this.el.trackerNote.textContent = 'Out of moves';
         }

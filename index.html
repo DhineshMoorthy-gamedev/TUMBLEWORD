@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/app_icon_512.png">
+  <link rel="apple-touch-icon" href="/app_icon_512.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#121316">
@@ -73,7 +77,7 @@
         <!-- Daily Challenge Card (Top Card) -->
         <div class="daily-challenge-section">
           <div class="daily-challenge-card" id="dailyChallengeCard">
-            <div class="daily-card-left">
+            <div class="daily-card-header">
               <div class="daily-badge-row">
                 <span class="daily-pill">DAILY CHALLENGE</span>
                 <span class="daily-streak-badge" id="dailyStreakBadge">
@@ -83,10 +87,6 @@
                   <span>0 STREAK</span>
                 </span>
               </div>
-              <h3 class="daily-card-title" id="dailyCardTitle">Today</h3>
-              <p class="daily-card-sub" id="dailyCountdownText">Resets in 12h 00m</p>
-            </div>
-            <div class="daily-card-actions">
               <button class="daily-cal-trigger-btn" id="dailyCalendarBtn" type="button" aria-label="Calendar Archive" title="Browse Past Days">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -95,12 +95,20 @@
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
               </button>
-              <button class="daily-play-btn" id="dailyPlayBtn" type="button" aria-label="Play Daily Challenge">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                  <polygon points="6 3 20 12 6 21 6 3"/>
-                </svg>
-                <span class="play-text">PLAY</span>
-              </button>
+            </div>
+            <div class="daily-card-body">
+              <div class="daily-card-left">
+                <h3 class="daily-card-title" id="dailyCardTitle">Today</h3>
+                <p class="daily-card-sub" id="dailyCountdownText">Resets in 12h 00m</p>
+              </div>
+              <div class="daily-card-actions">
+                <button class="daily-play-btn" id="dailyPlayBtn" type="button" aria-label="Play Daily Challenge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <polygon points="6 3 20 12 6 21 6 3"/>
+                  </svg>
+                  <span class="play-text">PLAY</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -108,26 +116,30 @@
         <!-- Endless Arcade Mode Card -->
         <div class="daily-challenge-section endless-mode-section">
           <div class="daily-challenge-card endless-card" id="endlessModeCard">
-            <div class="daily-card-left">
+            <div class="daily-card-header">
               <div class="daily-badge-row">
-                <span class="daily-pill" style="color: #A855F7; background: rgba(168, 85, 247, 0.16); border-color: #A855F7;">ENDLESS ARCADE</span>
-                <span class="daily-streak-badge" id="endlessStreakBadge" style="color: #A855F7; border-color: #A855F7;">
+                <span class="daily-pill endless-pill">ENDLESS ARCADE</span>
+                <span class="daily-streak-badge endless-streak" id="endlessStreakBadge">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                   </svg>
                   <span>BEST: <b id="endlessBestStreakVal">0</b></span>
                 </span>
               </div>
-              <h3 class="daily-card-title">Infinite Streak</h3>
-              <p class="daily-card-sub">Dynamic words, decaying obstacles</p>
             </div>
-            <div class="daily-card-actions">
-              <button class="daily-play-btn endless-play-btn" id="endlessPlayBtn" type="button" aria-label="Play Endless Mode" style="background: linear-gradient(135deg, #9333EA, #7E22CE);">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                  <polygon points="6 3 20 12 6 21 6 3"/>
-                </svg>
-                <span class="play-text">PLAY</span>
-              </button>
+            <div class="daily-card-body">
+              <div class="daily-card-left">
+                <h3 class="daily-card-title">Infinite Streak</h3>
+                <p class="daily-card-sub">Dynamic words, decaying obstacles</p>
+              </div>
+              <div class="daily-card-actions">
+                <button class="daily-play-btn endless-play-btn" id="endlessPlayBtn" type="button" aria-label="Play Endless Mode">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <polygon points="6 3 20 12 6 21 6 3"/>
+                  </svg>
+                  <span class="play-text">PLAY</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -135,6 +147,15 @@
         <!-- Main Campaign Launch Card (Center Hero) -->
         <div class="campaign-hero-section">
           <div class="campaign-hero-card" id="campaignHeroCard">
+            <button class="campaign-level-select-btn" id="campaignLevelSelectBtn" type="button" aria-label="Campaign Level Selector" title="Select Campaign Level">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              </svg>
+            </button>
+
             <h2 class="hero-level-title" id="heroLevelTitle">Level 001</h2>
             <p class="hero-level-sub" id="heroLevelSub">First Steps • Casual</p>
             
@@ -143,10 +164,6 @@
                 <polygon points="6 3 20 12 6 21 6 3"/>
               </svg>
               PLAY
-            </button>
-
-            <button class="browse-levels-btn" id="browseLevelsBtn" type="button">
-              ☰ Browse All 100 Levels
             </button>
           </div>
         </div>
@@ -187,7 +204,14 @@
           </div>
           <div class="game-topbar-right">
             <div class="empty-cells-badge" id="emptyCellsBadge" title="Available Empty / Total Floor Cells">
-              <span class="empty-badge-icon">⬚</span>
+              <span class="empty-badge-icon" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke-dasharray="2 2"></rect>
+                </svg>
+              </span>
               <span class="empty-badge-label">EMPTY</span>
               <b class="empty-badge-count" id="emptyCellsCount">0/0</b>
             </div>
@@ -204,29 +228,38 @@
           <button class="mode-btn" id="editorModeBtn" type="button">🛠️ Solver</button>
         </div>
 
-        <!-- TARGET WORD & COMPACT HUD STRIP -->
-        <div class="game-hud-strip">
-          <div class="hud-stat-pill" id="wordProgressPill">
-            <span class="hud-stat-label" id="wordProgressLabel">WORD</span>
-            <b class="hud-stat-val" id="wordProgress">1/3</b>
+        <!-- TARGET WORD & MISSION OBJECTIVE HERO CARD -->
+        <div class="game-hud-strip" id="gameHudCard">
+          <div class="hud-top-meta-row">
+            <div class="hud-stat-pill" id="wordProgressPill">
+              <span class="hud-stat-label" id="wordProgressLabel">WORD</span>
+              <b class="hud-stat-val" id="wordProgress">1/3</b>
+            </div>
+
+            <div class="hud-objective-indicator">
+              <span class="hud-objective-dot"></span>
+              <span class="hud-objective-title">TARGET WORD</span>
+            </div>
+
+            <div class="hud-stat-pill" id="movesPill">
+              <span class="hud-stat-label" id="movesLabel">MOVES</span>
+              <b class="hud-stat-val" id="moves">0/17</b>
+            </div>
           </div>
 
-          <div class="word" id="word" aria-label="Target word"></div>
-
-          <div class="hud-stat-pill" id="movesPill">
-            <span class="hud-stat-label" id="movesLabel">MOVES</span>
-            <b class="hud-stat-val" id="moves">0/17</b>
+          <div class="word-hero-wrap">
+            <div class="word" id="word" aria-label="Target word"></div>
           </div>
-        </div>
 
-        <!-- MINIMALIST 3 STARS TARGET BAR -->
-        <div class="star-goal-minimal" id="starGoalsTracker">
-          <div class="star-goal-stars" id="starGoalIcons">
-            <span class="star-icon active" id="starIcon1">★</span>
-            <span class="star-icon active" id="starIcon2">★</span>
-            <span class="star-icon active" id="starIcon3">★</span>
+          <!-- MINIMALIST 3 STARS TARGET BAR -->
+          <div class="star-goal-minimal" id="starGoalsTracker">
+            <div class="star-goal-stars" id="starGoalIcons">
+              <span class="star-icon active" id="starIcon1">★</span>
+              <span class="star-icon active" id="starIcon2">★</span>
+              <span class="star-icon active" id="starIcon3">★</span>
+            </div>
+            <span class="star-goal-label" id="trackerNote">Solve within 7 moves for 3 Stars</span>
           </div>
-          <span class="star-goal-label" id="trackerNote">Solve in 9 moves for 3 Stars</span>
         </div>
 
         <!-- INTERACTIVE TUTORIAL LIVE NOTIFICATION DISPLAY -->
@@ -350,6 +383,25 @@
         <!-- BANNER AD RESERVED SPACE (MOBILE & SAFE AREA) -->
         <div class="banner-ad-spacer" aria-hidden="true"></div>
       </div>
+
+      <!-- LEVEL 1 FIRST-TIME INTERACTIVE TOUR OVERLAY -->
+      <div class="level-tour-overlay" id="levelTourOverlay" hidden>
+        <div class="level-tour-backdrop" id="levelTourBackdrop"></div>
+        <div class="level-tour-spotlight" id="levelTourSpotlight"></div>
+        <div class="level-tour-card" id="levelTourCard">
+          <div class="level-tour-header">
+            <div class="level-tour-step-badge" id="levelTourStepBadge">1/3</div>
+            <h3 class="level-tour-title" id="levelTourTitle">🎯 TARGET WORD</h3>
+          </div>
+          <p class="level-tour-desc" id="levelTourDesc">
+            Slide letters together in order to spell the target word. Complete it within the move target for 3 Stars!
+          </p>
+          <div class="level-tour-footer">
+            <button class="level-tour-skip-btn" id="levelTourSkipBtn" type="button">Skip Tour</button>
+            <button class="level-tour-next-btn" id="levelTourNextBtn" type="button">Next ➔</button>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -407,13 +459,13 @@
     <div class="modal-card tutorial-modal-card">
       <div class="modal-header">
         <h3>How to Play</h3>
-        <button class="modal-close-btn" data-close-modal type="button" aria-label="Close modal">✕</button>
+        <button class="modal-close-btn" data-close-modal id="closeTutorialWelcomeBtn" type="button" aria-label="Close modal">✕</button>
       </div>
       <div class="modal-body tutorial-modal-body">
         <p class="tutorial-simple-sub">Rotate the board to shift gravity, slide falling letters, and bond words together.</p>
         <div class="tutorial-actions-row">
           <button class="turn next tutorial-start-btn" id="startTutorialBtn" type="button">
-            Start Tutorial
+            Start Interactive Tutorial
           </button>
         </div>
       </div>
@@ -665,7 +717,7 @@
 
           <!-- FOOTER NOTE -->
           <div class="settings-footer">
-            ROTATLE • v0.0.12 • OLAI DIGITAL STUDIOS
+            ROTATLE • v0.0.15 • OLAI DIGITAL STUDIOS
           </div>
         </div>
 
@@ -673,55 +725,115 @@
         <div class="settings-subview" id="settingsSubview" hidden>
           <!-- SUBVIEW: PRIVACY POLICY -->
           <div class="subview-content" id="subviewPrivacyPolicy" hidden>
-            <div class="privacy-card-container">
-              <h3 class="privacy-card-header">Privacy Policy</h3>
-              <p class="privacy-card-lead">
-                Rotatle is built with a strict offline-first, zero-data-collection philosophy by OLAI Digital Studios.
-              </p>
-
-              <div class="privacy-card-sep"></div>
-
-              <div class="privacy-card-section">
-                <h4 class="privacy-card-section-title">1. Zero Personal Data Collected</h4>
-                <p class="privacy-card-section-text">
-                  We do not collect, store, transmit, or sell any personal information, contacts, photos, camera, or precise geolocation data.
+            <div class="privacy-screen-container">
+              <!-- 1. HERO SHIELD HEADER -->
+              <div class="privacy-hero-header">
+                <div class="privacy-shield-icon-wrap">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                  </svg>
+                </div>
+                <h3 class="privacy-screen-title">Privacy &amp; Security</h3>
+                <div class="privacy-badge-pill">
+                  <span class="privacy-pulse-dot"></span>
+                  <span>100% OFFLINE-FIRST • ZERO TRACKING</span>
+                </div>
+                <p class="privacy-screen-lead">
+                  Rotatle is built with a strict privacy-first philosophy by OLAI Digital Studios. Your data never leaves your device.
                 </p>
               </div>
 
-              <div class="privacy-card-section">
-                <h4 class="privacy-card-section-title">2. Local On-Device Storage</h4>
-                <p class="privacy-card-section-text">
-                  All puzzle progress (dynamic N=5, 6, 7, 8 grids), completed words, streaks, optimal move scores, and visual preferences are stored exclusively on your device via standard local storage.
-                </p>
+              <!-- 2. MODERN PRIVACY PILLARS GRID -->
+              <div class="privacy-pillars-grid">
+                <!-- Pillar 1 -->
+                <div class="privacy-pillar-card">
+                  <div class="pillar-icon-box" style="background: rgba(56, 189, 248, 0.12); color: #38BDF8;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </div>
+                  <div class="pillar-text-content">
+                    <div class="pillar-header-row">
+                      <h4 class="pillar-title">Zero Personal Data</h4>
+                      <span class="pillar-tag">NO TRACKERS</span>
+                    </div>
+                    <p class="pillar-desc">
+                      We never collect, store, transmit, or sell personal identifiers, contacts, photos, camera, or location data.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Pillar 2 -->
+                <div class="privacy-pillar-card">
+                  <div class="pillar-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                  </div>
+                  <div class="pillar-text-content">
+                    <div class="pillar-header-row">
+                      <h4 class="pillar-title">100% Local Storage</h4>
+                      <span class="pillar-tag" style="color: #10B981; border-color: rgba(16, 185, 129, 0.3);">ON-DEVICE</span>
+                    </div>
+                    <p class="pillar-desc">
+                      All puzzle progression, words, campaign stars, and settings reside strictly on your device storage.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Pillar 3 -->
+                <div class="privacy-pillar-card">
+                  <div class="pillar-icon-box" style="background: rgba(168, 85, 247, 0.12); color: #A855F7;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </div>
+                  <div class="pillar-text-content">
+                    <div class="pillar-header-row">
+                      <h4 class="pillar-title">Secure Google Billing</h4>
+                      <span class="pillar-tag" style="color: #A855F7; border-color: rgba(168, 85, 247, 0.3);">ENCRYPTED</span>
+                    </div>
+                    <p class="pillar-desc">
+                      Purchases (Remove Ads) are processed directly by Google Play. OLAI never accesses or holds financial credentials.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Pillar 4 -->
+                <div class="privacy-pillar-card">
+                  <div class="pillar-icon-box" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                  </div>
+                  <div class="pillar-text-content">
+                    <div class="pillar-header-row">
+                      <h4 class="pillar-title">Local Reminders</h4>
+                      <span class="pillar-tag" style="color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">NO CLOUD</span>
+                    </div>
+                    <p class="pillar-desc">
+                      Daily Challenge notifications trigger locally via Android OS alarms without remote servers or background telemetry.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div class="privacy-card-section">
-                <h4 class="privacy-card-section-title">3. In-App Purchases &amp; Monetization</h4>
-                <p class="privacy-card-section-text">
-                  In-app purchases (Remove Ads) are processed securely through Google Play Billing. OLAI Digital Studios does not receive, handle, or store any financial credentials.
-                </p>
-              </div>
-
-              <div class="privacy-card-section">
-                <h4 class="privacy-card-section-title">4. Local Device Notifications</h4>
-                <p class="privacy-card-section-text">
-                  Daily Challenge reminders are generated locally on your device without external push servers or tracking tokens.
-                </p>
-              </div>
-
-              <div class="privacy-card-sep"></div>
-
+              <!-- 3. ONLINE POLICY CTA -->
               <button class="privacy-read-online-btn" id="viewOnlinePrivacyBtn" type="button">
-                <span>Read Full Online Policy</span>
+                <span>Read Official Policy on Web</span>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                   <polyline points="15 3 21 3 21 9"></polyline>
                 </svg>
               </button>
             </div>
-          </div>
-
-          <!-- SUBVIEW: ABOUT -->
+          </div><!-- SUBVIEW: ABOUT -->
           <div class="subview-content" id="subviewAboutCredits" hidden>
             <div class="about-screen-container">
               <!-- 1. BRAND IDENTITY BLOCK -->
@@ -730,7 +842,7 @@
                   <img src="./app_icon_512.png" alt="ROTATLE App Icon" width="80" height="80">
                 </div>
                 <h1 class="about-app-name">ROTATLE</h1>
-                <div class="about-version-badge">v0.0.12</div>
+                <div class="about-version-badge">v0.0.15</div>
               </div>
 
               <!-- 2. DEVELOPER CREDITS (Clean Centered Hierarchy) -->
@@ -913,7 +1025,7 @@
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
-            <span>Level Select</span>
+            <span>Home</span>
           </button>
         </div>
       </div>
@@ -921,7 +1033,7 @@
       <!-- 7. DAILY ACTION BUTTONS -->
       <div class="victory-actions" id="victoryDailyActions" style="display:none;">
         <button class="turn next victory-btn-primary" id="victoryDailyHomeBtn" type="button">
-          Return Home
+          Home
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -964,29 +1076,20 @@
       </div>
 
       <div class="out-of-moves-actions">
-        <button class="turn next out-of-moves-undo-btn" id="outOfMovesUndoBtn" type="button">
+        <button class="turn next out-of-moves-restart-btn" id="outOfMovesRestartBtn" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
-            <path d="M3 7v6h6"></path>
-            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
-          Undo Last Move
+          Restart
         </button>
-        <div class="row">
-          <button class="ghost" id="outOfMovesRestartBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
-            Restart
-          </button>
-          <button class="ghost" id="outOfMovesHomeBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            Level Select
-          </button>
-        </div>
+        <button class="ghost out-of-moves-home-btn" id="outOfMovesHomeBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Home
+        </button>
       </div>
     </div>
   </div>
@@ -1189,6 +1292,44 @@
         <button class="update-btn-secondary exit-leave-btn" id="exitLeaveBtn" type="button">
           Exit to Menu
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMPAIGN LEVEL SELECTOR MODAL -->
+  <div class="modal-overlay" id="campaignLevelsModal" hidden>
+    <div class="modal-card campaign-levels-modal-card">
+      <div class="modal-header campaign-levels-modal-header">
+        <div class="campaign-levels-header-left">
+          <div class="campaign-levels-header-title-row">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+            </svg>
+            <h3>Campaign Levels</h3>
+          </div>
+          <span class="campaign-levels-summary-badge" id="campaignLevelsSummaryBadge">★ 0 / 300 Stars • 0 / 100 Cleared</span>
+        </div>
+        <button class="modal-close-btn" data-close-modal type="button" aria-label="Close Levels" title="Close (Esc)">✕</button>
+      </div>
+
+      <!-- Tier Navigation Tabs Bar -->
+      <div class="levels-tabs-bar" id="levelsTabsBar">
+        <button type="button" class="level-tab-btn active" data-tier="all">ALL (100)</button>
+        <button type="button" class="level-tab-btn" data-tier="Casual">CASUAL (1-20)</button>
+        <button type="button" class="level-tab-btn" data-tier="Apprentice">APPRENTICE (21-40)</button>
+        <button type="button" class="level-tab-btn" data-tier="Adept">ADEPT (41-60)</button>
+        <button type="button" class="level-tab-btn" data-tier="Master">MASTER (61-80)</button>
+        <button type="button" class="level-tab-btn" data-tier="Grandmaster">GRANDMASTER (81-100)</button>
+      </div>
+
+      <!-- Scrollable Levels Grid -->
+      <div class="modal-level-grid-container" id="modalLevelGridContainer">
+        <div class="modal-level-grid" id="modalLevelGrid">
+          <!-- Dynamically populated by UIManager -->
+        </div>
       </div>
     </div>
   </div>

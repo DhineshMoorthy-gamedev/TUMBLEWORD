@@ -67,6 +67,11 @@ export class WordSlotsRenderer {
       s.className = `slot${isWon ? ' won' : ' slot-reveal'}`;
       s.style.setProperty('--slot-idx', String(idx));
       s.textContent = ch;
+      if (!isWon) {
+        const cleanup = () => s.classList.remove('slot-reveal');
+        s.addEventListener('animationend', cleanup, { once: true });
+        setTimeout(cleanup, 320 + idx * 35);
+      }
       this.wordEl.appendChild(s);
     });
 
@@ -161,7 +166,7 @@ export class WordSlotsRenderer {
     if (!this.wordEl) return;
     const classesToRemove = [
       'bonded', 'chunk-bonded', 'chunk-start', 'chunk-mid', 'chunk-end',
-      'chunk-single', 'chunk-theme-0', 'chunk-theme-1', 'merge-pop'
+      'chunk-single', 'chunk-theme-0', 'chunk-theme-1', 'merge-pop', 'slot-reveal'
     ];
     this.wordEl.querySelectorAll('.slot').forEach(s => {
       s.classList.remove(...classesToRemove);
