@@ -1209,11 +1209,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.15)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.16)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.15)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.16)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);

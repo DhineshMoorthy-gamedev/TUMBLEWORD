@@ -68,6 +68,48 @@
   --btn-secondary-ink: #F4F4F5;
   --btn-secondary-border: #2A2D35;
 
+  /* ── transitions.dev Motion Tokens (Shared Scale) ────── */
+  --duration-stagger: 40ms;
+  --duration-micro: 80ms;
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --duration-very-slow: 500ms;
+
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: ease-in-out;
+  --ease-out: ease-out;
+  --ease-linear: linear;
+  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
+
+  --distance-micro: 4px;
+  --distance-small: 6px;
+  --distance-base: 8px;
+  --distance-medium: 12px;
+  --distance-large: 30px;
+
+  --scale-modal: 0.96;
+  --scale-dropdown: 0.97;
+  --scale-subtle: 0.98;
+  --blur-subtle: 2px;
+  --blur-medium: 3px;
+
+  /* Toast Variables (transitions.dev 22-toast) */
+  --toast-open: 300ms;
+  --toast-close: 180ms;
+  --toast-distance: 14px;
+  --toast-blur: 2px;
+  --toast-scale: 0.97;
+  --toast-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Modal Variables (transitions.dev 06-modal) */
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale-pre: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Elevation Shadows */
   --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   --board-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
@@ -2018,6 +2060,14 @@ main {
   align-items: center;
   justify-content: center;
   padding: 12px;
+  opacity: 1;
+  transition: opacity var(--modal-open-dur, 250ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.modal-overlay.is-closing {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--modal-close-dur, 150ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .modal-card {
@@ -2032,14 +2082,24 @@ main {
   flex-direction: column;
   gap: 12px;
   box-shadow: var(--card-shadow);
-  animation: modalPop 0.2s ease-out;
+  transform-origin: center;
+  animation: modalEnter var(--modal-open-dur, 250ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-@keyframes modalPop {
-  0% { transform: scale(0.94); opacity: 0; }
+.modal-overlay.is-closing .modal-card {
+  animation: modalExit var(--modal-close-dur, 150ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
+}
+
+@keyframes modalEnter {
+  0% { transform: scale(var(--modal-scale-pre, 0.96)); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes modalExit {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(var(--modal-scale-pre, 0.96)); opacity: 0; }
 }
 
 .modal-header {
@@ -4046,22 +4106,47 @@ input:checked + .toggle-slider::before {
   opacity: 1;
   transform: scale(1);
   text-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
-  animation: starDropBounce 0.45s cubic-bezier(0.34, 1.55, 0.64, 1) both;
+  animation: starDropBounce var(--duration-slow, 400ms) var(--ease-bounce, cubic-bezier(0.34, 1.36, 0.64, 1)) both;
 }
 
 @keyframes starDropBounce {
   0% {
     opacity: 0;
-    transform: translateY(-26px) scale(0.3) rotate(-25deg);
+    transform: translateY(-24px) scale(0.3) rotate(-20deg);
   }
   65% {
     opacity: 1;
-    transform: translateY(4px) scale(1.22) rotate(8deg);
+    transform: translateY(3px) scale(1.18) rotate(6deg);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1) rotate(0deg);
   }
+}
+
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 1;
+  transition: opacity var(--modal-open-dur, 250ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.victory-overlay.is-closing {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--modal-close-dur, 150ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.victory-overlay.is-closing .victory-card {
+  animation: modalExit var(--modal-close-dur, 150ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
 }
 
 .victory-rating-pill {
@@ -4599,10 +4684,11 @@ input:checked + .toggle-slider::before {
   position: fixed;
   bottom: max(96px, calc(env(safe-area-inset-bottom, 0px) + 80px));
   left: 50%;
-  transform: translateX(-50%) translateY(16px);
+  transform: translateX(-50%) translateY(var(--toast-distance, 14px)) scale(var(--toast-scale, 0.97));
+  filter: blur(var(--toast-blur, 2px));
   background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border: 1px solid var(--line);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 3px 10px rgba(0, 0, 0, 0.25);
   padding: 11px 24px;
   border-radius: 9999px;
@@ -4612,16 +4698,25 @@ input:checked + .toggle-slider::before {
   letter-spacing: 0.02em;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
   z-index: 99999;
   white-space: nowrap;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  will-change: transform, opacity, filter;
+  transition:
+    opacity var(--toast-close, 180ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform var(--toast-close, 180ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter var(--toast-close, 180ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .app-toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0) scale(1);
+  filter: blur(0);
+  transition:
+    opacity var(--toast-open, 300ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform var(--toast-open, 300ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter var(--toast-open, 300ms) var(--toast-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 /* ======================================================== */
@@ -5681,4 +5776,15 @@ input:checked + .toggle-slider::before {
 
 .level-tour-next-btn:active {
   transform: scale(0.96) !important;
+}
+/* ======================================================== */
+/* ACCESSIBILITY: PREFERS REDUCED MOTION                    */
+/* ======================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

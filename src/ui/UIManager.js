@@ -512,18 +512,32 @@ export class UIManager {
     const modal = document.getElementById(modalId);
     if (modal) {
       this.closeAllModals();
+      modal.classList.remove('is-closing');
       modal.hidden = false;
     }
   }
 
   closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.hidden = true;
+    if (!modal || modal.hidden) return;
+    modal.classList.add('is-closing');
+    setTimeout(() => {
+      modal.hidden = true;
+      modal.classList.remove('is-closing');
+    }, 150);
   }
 
   closeAllModals() {
     const modals = document.querySelectorAll('.modal-overlay:not(#outOfMovesModal):not(#victoryOverlay)');
-    modals.forEach(m => m.hidden = true);
+    modals.forEach(m => {
+      if (!m.hidden) {
+        m.classList.add('is-closing');
+        setTimeout(() => {
+          m.hidden = true;
+          m.classList.remove('is-closing');
+        }, 150);
+      }
+    });
   }
 
   getActiveModal() {
@@ -1194,7 +1208,15 @@ export class UIManager {
    * Hide victory modal
    */
   hideVictory() {
-    if (this.el.victoryOverlay) this.el.victoryOverlay.hidden = true;
+    if (this.el.victoryOverlay) {
+      this.el.victoryOverlay.classList.add('is-closing');
+      setTimeout(() => {
+        if (this.el.victoryOverlay) {
+          this.el.victoryOverlay.hidden = true;
+          this.el.victoryOverlay.classList.remove('is-closing');
+        }
+      }, 150);
+    }
     const starsContainer = this.el.victoryStar1 ? this.el.victoryStar1.parentElement : null;
     if (starsContainer) {
       starsContainer.style.display = 'flex';
@@ -1219,6 +1241,7 @@ export class UIManager {
       this.el.outOfMovesCount.textContent = `${gameState.moves} / ${maxMoves}`;
     }
     if (this.el.outOfMovesModal) {
+      this.el.outOfMovesModal.classList.remove('is-closing');
       this.el.outOfMovesModal.hidden = false;
     }
   }
@@ -1228,7 +1251,13 @@ export class UIManager {
    */
   hideOutOfMoves() {
     if (this.el.outOfMovesModal) {
-      this.el.outOfMovesModal.hidden = true;
+      this.el.outOfMovesModal.classList.add('is-closing');
+      setTimeout(() => {
+        if (this.el.outOfMovesModal) {
+          this.el.outOfMovesModal.hidden = true;
+          this.el.outOfMovesModal.classList.remove('is-closing');
+        }
+      }, 150);
     }
   }
 
