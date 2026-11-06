@@ -4,14 +4,14 @@
  * (matching Grid Leap native layout & bottom placement) with universal fallback
  */
 
-import { Capacitor } from '@capacitor/core';
 import { AdMobConfig } from '../config/admobConfig.js';
 import { inAppPurchaseManager } from './inAppPurchaseManager.js';
+import { PlatformService } from './platformService.js';
 
 export class AdMobManager {
   constructor() {
     this.initialized = false;
-    this.isSupported = Capacitor.isNativePlatform();
+    this.isSupported = PlatformService.hasAds;
     this.bannerActive = false;
     this.interstitialReady = false;
     this.rewardedReady = false;

@@ -1,14 +1,14 @@
 {
   "name": "rotatle",
   "private": true,
-  "version": "0.0.16",
+  "version": "0.0.17",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:web": "vite --mode web",
-    "dev:itch": "vite --mode itch",
-    "dev:editor": "vite --mode editor",
-    "dev:playstore": "vite --mode playstore",
+    "dev": "vite --port 3000",
+    "dev:web": "vite --mode web --port 3000",
+    "dev:playstore": "vite --mode playstore --port 3001",
+    "dev:itch": "vite --mode itch --port 3002",
+    "dev:editor": "vite --mode editor --port 3003",
     "build": "vite build",
     "build:web": "vite build --mode web",
     "build:itch": "vite build --mode itch",
@@ -17,16 +17,25 @@
     "build:all": "npm run build:web && npm run build:itch && npm run build:editor && npm run build:playstore",
     "build:apk": "npm run build:playstore && cd android && gradlew.bat assembleDebug",
     "build:aab": "npm run build:playstore && cd android && gradlew.bat bundleRelease",
+    "tauri": "node scripts/tauri-wrapper.cjs",
+    "tauri:dev": "npm run build:itch && node scripts/tauri-wrapper.cjs dev",
+    "tauri:build": "npm run build:itch && node scripts/tauri-wrapper.cjs build",
     "preview": "vite preview",
     "preview:web": "vite preview --mode web",
     "preview:itch": "vite preview --mode itch",
     "preview:editor": "vite preview --mode editor",
     "preview:playstore": "vite preview --mode playstore",
     "cap:sync": "cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "tauri:msix": "npm run build:itch && tauri-windows-bundle build --runner npm --verbose",
+    "tauri:windows:build": "npm run build:itch && tauri-windows-bundle build --runner npm --verbose"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.1",
+    "@choochmeque/tauri-windows-bundle": "^0.2.0",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/cli": "^2.12.4",
+    "@tauri-apps/plugin-shell": "^2.6.0",
     "vite": "^6.2.0"
   },
   "dependencies": {

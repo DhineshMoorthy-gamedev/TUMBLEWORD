@@ -1,0 +1,30 @@
+{
+  "publisher": "CN=OlaiDigitalStudios",
+  "publisherDisplayName": "Olai Digital Studios",
+  "capabilities": {
+    "general": [
+      "internetClient"
+    ]
+  },
+  "extensions": {
+    "shareTarget": false,
+    "fileAssociations": [],
+    "protocolHandlers": []
+  },
+  "signing": {
+    "pfx": null,
+    "pfxPassword": null
+  },
+  "resourceIndex": {
+    "enabled": true,
+    "keepConfig": false
+  },
+  "assets": {
+    "variants": {
+      "scale": true,
+      "targetSize": true,
+      "unplated": true,
+      "lightUnplated": true
+    }
+  }
+}

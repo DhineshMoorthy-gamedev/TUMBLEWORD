@@ -218,10 +218,92 @@ export function setAdsRemoved(removed = true) {
 }
 
 const HINT_COUNT_KEY = 'rotatle_hint_count';
+const HINT_RECHARGE_KEY = 'rotatle_hint_recharge_time';
+export const HINT_RECHARGE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 const DEFAULT_FREE_HINTS = 3;
+
+export function getHintRechargeTarget() {
+  try {
+    const raw = localStorage.getItem(HINT_RECHARGE_KEY);
+    if (!raw) return null;
+    const target = parseInt(raw, 10);
+    return isNaN(target) ? null : target;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function startHintRechargeTimer() {
+  try {
+    let target = getHintRechargeTarget();
+    if (!target || target <= Date.now()) {
+      target = Date.now() + HINT_RECHARGE_DURATION_MS;
+      localStorage.setItem(HINT_RECHARGE_KEY, String(target));
+    }
+    return target;
+  } catch (e) {
+    return Date.now() + HINT_RECHARGE_DURATION_MS;
+  }
+}
+
+export function clearHintRechargeTimer() {
+  try {
+    localStorage.removeItem(HINT_RECHARGE_KEY);
+  } catch (e) {}
+}
+
+/**
+ * Checks if recharge timer is active and calculates remaining ms.
+ * If expired, automatically grants +1 hint and clears the recharge target.
+ * @returns {number} remaining ms until recharge, or 0 if ready/inactive
+ */
+export function getHintRechargeRemainingMs() {
+  const target = getHintRechargeTarget();
+  if (!target) return 0;
+
+  const now = Date.now();
+  if (now >= target) {
+    // 4 hours elapsed! Grant +1 hint and clear recharge timer
+    clearHintRechargeTimer();
+    const current = loadHintCount();
+    saveHintCount(current + 1);
+    return 0;
+  }
+  return Math.max(0, target - now);
+}
+
+/**
+ * Format milliseconds into HH:MM:SS or Xh Ym
+ * @param {number} ms
+ * @param {boolean} [padHours=true]
+ * @returns {string}
+ */
+export function formatRechargeTime(ms, padHours = true) {
+  if (!ms || ms <= 0) return padHours ? '00:00:00' : '0m';
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (padHours) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m ${seconds}s`;
+}
 
 export function loadHintCount() {
   try {
+    // Check if an existing 4-hour recharge expired while away
+    const target = getHintRechargeTarget();
+    if (target && Date.now() >= target) {
+      clearHintRechargeTimer();
+      const current = parseInt(localStorage.getItem(HINT_COUNT_KEY) || '0', 10) || 0;
+      saveHintCount(current + 1);
+    }
+
     const raw = localStorage.getItem(HINT_COUNT_KEY);
     if (raw === null) {
       // First-time player bonus: 3 free starter hints
@@ -244,7 +326,11 @@ export function saveHintCount(count) {
 export function consumeHint() {
   const current = loadHintCount();
   if (current > 0) {
-    saveHintCount(current - 1);
+    const next = current - 1;
+    saveHintCount(next);
+    if (next === 0) {
+      startHintRechargeTimer();
+    }
     return true;
   }
   return false;
@@ -254,6 +340,9 @@ export function addHints(amount = 1) {
   const current = loadHintCount();
   const next = current + Math.max(1, amount);
   saveHintCount(next);
+  if (next > 0) {
+    clearHintRechargeTimer();
+  }
   return next;
 }
 
@@ -317,6 +406,7 @@ export function clearAllGameData() {
     localStorage.removeItem(LEVEL_BEST_MOVES_KEY);
     localStorage.removeItem('rotatle_ads_removed');
     localStorage.removeItem(HINT_COUNT_KEY);
+    localStorage.removeItem(HINT_RECHARGE_KEY);
     localStorage.removeItem('rotatle_daily_data');
     localStorage.removeItem('rotatle_endless_best');
     localStorage.removeItem(ACHIEVEMENTS_DATA_KEY);

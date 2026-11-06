@@ -5,6 +5,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { InAppReview } from '@capacitor-community/in-app-review';
 import { TargetConfig } from '../config/targetConfig.js';
 import { loadVibrateEnabled } from '../utils/storage.js';
+import { PlatformService } from './platformService.js';
 
 /**
  * Check if haptic vibration is supported on current platform/device
@@ -58,7 +59,7 @@ export class NativeBridge {
   async _bindBackButton() {
     if (typeof window === 'undefined') return;
 
-    if (Capacitor.isNativePlatform()) {
+    if (PlatformService.hasHardwareBack) {
       try {
         App.addListener('backButton', () => {
           this.handleHardwareBack();

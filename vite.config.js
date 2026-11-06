@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true
     },
     server: {
-      port: 3000,
+      host: true,
       open: true
     },
     preview: {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rotatle-v0.0.16';
+const CACHE_NAME = 'rotatle-v0.0.17';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -31,6 +31,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  // Cache API only supports http: and https: schemes (bypasses chrome-extension://, file://, etc.)
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) return;
 
   event.respondWith(
     caches.match(event.request).then(cached => {

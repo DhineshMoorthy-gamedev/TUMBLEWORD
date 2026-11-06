@@ -1,8 +1,8 @@
 # Cross-Platform Implementation & Platform Readiness Report
 **Project:** Rotatle (`com.olaidigitalstudios.rotatle`)  
 **Scope:** Architecture Modernization, Multi-Target Build Pipeline Verification, Audio Synthesis & Platform Readiness  
-**Version:** `0.0.16`  
-**Date:** September 2026  
+**Version:** `0.0.17`  
+**Date:** November 2026  
 
 ---
 
@@ -40,7 +40,7 @@ pie title Platform Implementation Completion
 - **APK Generation:** `npm run build:apk`
 - **AAB Bundle Generation:** `npm run build:aab`
 - **Package Name:** `com.olaidigitalstudios.rotatle`
-- **Version:** `0.0.16` (versionCode 16)
+- **Version:** `0.0.17` (versionCode 17)
 - **Engine / Wrapper:** Capacitor v8.5.1 on Android (`minSdkVersion 24`, `targetSdkVersion 36`).
 
 ### What Is Implemented & Working (92%)

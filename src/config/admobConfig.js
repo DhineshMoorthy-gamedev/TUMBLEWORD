@@ -5,7 +5,7 @@
 
 export const AdMobConfig = {
   // Toggle testing mode (set false for production store releases)
-  isTesting: false,
+  isTesting: true,
 
   // Production Ad Unit IDs (Provided by Google AdMob Console)
   production: {

@@ -2020,6 +2020,14 @@ main {
   padding: 1px 4px;
 }
 
+.hint-count-badge.recharge {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
 .action-btn.hint-active {
   background: linear-gradient(135deg, #F59E0B, #D97706) !important;
   color: #FFFFFF !important;
@@ -4004,139 +4012,24 @@ input:checked + .toggle-slider::before {
   display: none !important;
 }
 
+/* ======================================================== */
+/* REDESIGNED LEVEL VICTORY OVERLAY & CARD (Clean & Fluid)  */
+/* ======================================================== */
 .victory-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(6px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.victory-card {
-  width: 100%;
-  max-width: 380px;
-  max-height: calc(100dvh - 30px);
-  background: var(--bg-card);
-  border: 2px solid var(--goal-color);
-  border-radius: 16px;
-  padding: 22px 18px;
-  text-align: center;
-  box-shadow: var(--card-shadow);
-}
-
-.victory-icon {
-  font-size: 38px;
-  margin-bottom: 4px;
-}
-
-.victory-card h2 {
-  margin: 0 0 4px;
-  font-family: var(--font-ui);
-  font-weight: 800;
-  font-size: 20px;
-  color: var(--text-main);
-}
-
-.victory-sub {
-  margin: 0 0 12px;
-  font-size: 12.5px;
-  color: var(--text-dim);
-}
-
-.victory-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 16px;
-}
-
-.stat-box {
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 3px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stat-box span {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-.stat-box b {
-  font-size: 13.5px;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-}
-
-.victory-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-/* 3-STAR VICTORY REVEAL & BENCHMARK */
-.victory-stars-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.victory-star {
-  font-size: 36px;
-  color: var(--text-muted);
-  opacity: 0.2;
-  transform: scale(0.65);
-  transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1), color 0.3s ease, opacity 0.3s ease;
-}
-
-.victory-star.earned {
-  color: #F59E0B;
-  opacity: 1;
-  transform: scale(1);
-  text-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
-  animation: starDropBounce var(--duration-slow, 400ms) var(--ease-bounce, cubic-bezier(0.34, 1.36, 0.64, 1)) both;
-}
-
-@keyframes starDropBounce {
-  0% {
-    opacity: 0;
-    transform: translateY(-24px) scale(0.3) rotate(-20deg);
-  }
-  65% {
-    opacity: 1;
-    transform: translateY(3px) scale(1.18) rotate(6deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1) rotate(0deg);
-  }
-}
-
-.victory-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: clamp(10px, 3vw, 24px);
+  overflow-y: auto;
   opacity: 1;
   transition: opacity var(--modal-open-dur, 250ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  box-sizing: border-box;
 }
 
 .victory-overlay.is-closing {
@@ -4149,27 +4042,76 @@ input:checked + .toggle-slider::before {
   animation: modalExit var(--modal-close-dur, 150ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
 }
 
-.victory-rating-pill {
-  font-family: var(--font-ui);
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #F59E0B;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+.victory-card {
+  width: 100%;
+  max-width: min(90vw, 340px);
+  max-height: calc(100dvh - 28px);
+  background: var(--bg-card, #1c1917);
+  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
   border-radius: 20px;
-  padding: 4px 14px;
-  margin: 0 auto 12px;
-  display: inline-block;
+  padding: clamp(20px, 5.5vw, 28px) clamp(16px, 4.5vw, 22px);
+  text-align: center;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto;
+  box-sizing: border-box;
+  animation: modalEnter var(--modal-open-dur, 250ms) var(--modal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
-/* Daily Challenge Victory Showcase */
+/* 1. Animated Victory Stars */
+.victory-stars-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(10px, 3vw, 16px);
+  margin-bottom: 12px;
+}
+
+.victory-star {
+  font-size: clamp(32px, 8.5vw, 42px);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.12);
+  transform: scale(0.75);
+  transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1), color 0.3s ease;
+  user-select: none;
+}
+
+.victory-star:nth-child(2) {
+  font-size: clamp(40px, 10.5vw, 50px);
+  margin-top: -6px;
+}
+
+.victory-star.earned {
+  color: #FBBF24;
+  transform: scale(1);
+  filter: drop-shadow(0 2px 10px rgba(245, 158, 11, 0.55));
+  animation: starDropBounce 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@keyframes starDropBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.3) rotate(-16deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.15) rotate(4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* 2. Daily Challenge Emblem */
 .victory-daily-emblem {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .daily-emblem-icon {
-  font-size: 40px;
+  font-size: clamp(38px, 9.5vw, 48px);
   display: inline-block;
   animation: trophyPop 0.5s cubic-bezier(0.34, 1.55, 0.64, 1) both;
 }
@@ -4179,85 +4121,116 @@ input:checked + .toggle-slider::before {
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-.victory-daily-stats-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.daily-stat-box {
-  padding: 10px 8px;
-  border-radius: 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-}
-
-.daily-stat-box span {
-  font-size: 10.5px;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-}
-
-.daily-stat-box b {
-  font-size: 15px;
+/* 3. Title */
+.victory-card h2 {
+  margin: 0 0 22px;
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 4.8vw, 1.5rem);
   color: var(--text-main);
-  margin-top: 2px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
-/* Daily Date Navigation Strip */
+/* 5. Sleek Unified Stats Strip */
+.victory-stats-panel {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 6px;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+
+.victory-stats-panel.daily {
+  padding: 10px 14px;
+}
+
+.victory-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px;
+  min-width: 0;
+  background: transparent;
+  border: none;
+}
+
+.victory-stat-divider {
+  width: 1px;
+  background: var(--line);
+  margin: 2px 0;
+  flex-shrink: 0;
+}
+
+.victory-stat-label {
+  font-family: var(--font-mono);
+  font-size: clamp(0.62rem, 2.2vw, 0.7rem);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.victory-stat-value {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 3.8vw, 1.25rem);
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.victory-stat-item.highlight .victory-stat-value {
+  color: var(--goal-color);
+}
+
+/* 6. Daily Date Navigation Strip */
 .victory-daily-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 6px;
-  margin-bottom: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line);
-  padding: 5px 6px;
-  border-radius: 12px;
+  width: 100%;
+  margin-bottom: 12px;
+  box-sizing: border-box;
 }
 
 .daily-nav-btn {
   flex: 1;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 7px 8px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--text-main);
-  font-family: var(--font-ui);
-  font-size: 11.5px;
-  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s, opacity 0.2s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
   user-select: none;
-}
-
-.daily-nav-btn {
-  flex: 1;
-  min-height: 44px;
-  height: 44px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--text-main);
-  font-family: var(--font-ui);
-  font-size: 13.5px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .daily-nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--goal-color);
   transform: translateY(-1px);
 }
@@ -4274,7 +4247,7 @@ input:checked + .toggle-slider::before {
 
 .daily-nav-btn.cal-btn {
   background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.28);
   color: var(--goal-color);
 }
 
@@ -4282,7 +4255,15 @@ input:checked + .toggle-slider::before {
   background: rgba(16, 185, 129, 0.16);
 }
 
-/* Modern Victory Action Buttons */
+/* 7. Action Buttons */
+.victory-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .victory-btn-primary {
   width: 100%;
   min-height: 48px;
@@ -4292,15 +4273,16 @@ input:checked + .toggle-slider::before {
   justify-content: center;
   gap: 8px;
   background: var(--goal-color) !important;
-  color: var(--accent-contrast) !important;
+  color: var(--accent-contrast, #0D1117) !important;
   font-family: var(--font-ui);
-  font-size: 15px;
+  font-size: 0.98rem;
   font-weight: 800;
   border: none;
   border-radius: 14px;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  box-sizing: border-box;
 }
 
 .victory-btn-primary:hover {
@@ -4315,37 +4297,81 @@ input:checked + .toggle-slider::before {
 
 .victory-btn-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .victory-btn-secondary {
   flex: 1;
-  min-height: 48px;
-  height: 48px;
+  min-height: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--bg-surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--text-main);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  box-sizing: border-box;
 }
 
 .victory-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
 
 .victory-btn-secondary:active {
   transform: translateY(0);
+}
+
+/* 8. Compact Viewport Adaptations (Landscape / Short Screens) */
+@media (max-height: 580px) {
+  .victory-card {
+    padding: 12px 14px;
+    max-height: calc(100dvh - 16px);
+  }
+  .victory-stars-row {
+    margin-bottom: 4px;
+  }
+  .victory-star {
+    font-size: 24px;
+  }
+  .victory-star:nth-child(2) {
+    font-size: 28px;
+  }
+  .victory-card h2 {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+  }
+  .victory-stats-panel {
+    padding: 5px 4px;
+    margin-bottom: 8px;
+  }
+  .victory-stat-value {
+    font-size: 0.95rem;
+  }
+  .victory-btn-primary {
+    min-height: 38px;
+    height: 38px;
+    font-size: 0.88rem;
+  }
+  .victory-btn-secondary {
+    min-height: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+  .daily-nav-btn {
+    min-height: 36px;
+    height: 36px;
+  }
 }
 
 /* ======================================================== */
@@ -4962,6 +4988,73 @@ input:checked + .toggle-slider::before {
 
 .rewarded-ad-btn:active:not(:disabled) {
   transform: scale(0.98);
+}
+
+/* ======================================================== */
+/* HINT RECHARGE MODAL (WEB & DESKTOP)                      */
+/* ======================================================== */
+.hint-recharge-card {
+  max-width: 380px;
+  width: 90%;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15);
+}
+
+.hint-recharge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hint-recharge-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.hint-recharge-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hint-recharge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-ui);
+}
+
+.hint-recharge-text b {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint-recharge-timer-display {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 800;
+  color: #38BDF8;
+  letter-spacing: 0.05em;
+}
+
+.hint-recharge-note {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* ======================================================== */

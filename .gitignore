@@ -51,6 +51,10 @@ android/gradle/wrapper/gradle-wrapper.jar
 *.keystore
 *.jks
 
+# Tauri / Rust desktop build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
 # Temporary scratch & cache files
 .temp/
 .cache/

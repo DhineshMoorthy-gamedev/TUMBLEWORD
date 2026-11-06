@@ -3,7 +3,76 @@ desktop - npm run dev:itch , npm run preview:itch , npm run build:itch
 editor - npm run dev:editor , npm run preview:editor , npm run build:editor
 playstore - npm run dev:playstore , npm run preview:playstore , npm run build:playstore
 default - npm run dev
+npm run tauri:dev
+npm run tauri:build
+npm run tauri:msix  (builds Microsoft Store .msixbundle container)
 
 agy --conversation=f1ddbdd8-ee01-4e1a-8c79-8e552be0e356 - dev
 agy --conversation=89f994db-f619-40ba-8fd6-1f9c31613421 - analysis
 opencode -s ses_efa1bb4f2ffej2a032tnR2m5oV
+codex resume 01a1aac8-fa7c-7742-9863-7e2207db709d
+
+# ==========================================
+# Google AdMob Production IDs (Rotatle)
+# ==========================================
+# App ID:        ca-app-pub-4890313674539327~7104584458
+# Banner Ad:     ca-app-pub-4890313674539327/9528491258
+# Interstitial:  ca-app-pub-4890313674539327/8753456476
+# Rewarded Ad:   ca-app-pub-4890313674539327/6062965529
+
+Yes, exactly right! Here is a quick reference for both:
+──────
+### 1. Google Play Store (AdMob Production Access)
+
+• What you need to do: Once your AdMob account and app review are approved for production ads, just let me know (or you can
+do it anytime).
+• What gets restored:
+    1. In admobConfig.js, we set isTesting: false.
+    2. In AndroidManifest.xml, we restore your production App ID from cmd.txt (ca-app-pub-4890313674539327~7104584458).
+    3. Run npm run build:playstore and generate your signed Release AAB.
+
+──────
+### 2. Microsoft Store (Product Identity)
+
+• What you need to do:
+    1. Go to Microsoft Partner Center https://partner.microsoft.com/dashboard.
+    2. Reserve your product name (e.g. Rotatle).
+    3. In the left navigation of your app, go to Product management > Product Identity.
+    4. Copy these 3 values and paste them here:
+        • Package/Identity/Name (e.g. 12345OlaiDigitalStudios.Rotatle)
+        • Package/Identity/Publisher (e.g. CN=A1B2C3D4-5678-90AB-CDEF-1234567890AB)
+        • Package/Properties/PublisherDisplayName (e.g. Olai Digital Studios)
+
+• What gets updated:
+    • We paste those into bundle.config.json and tauri.conf.json.
+    • Run npm run tauri:msix.
+    • The resulting .msixbundle will match Microsoft Partner Center's identity check, ready to drag-and-drop into the  
+    submission package uploader.
+
+
+since we are targeting multi platform , i need us to get aligned for this task : i need to update the game to lets say
+  0.0.17(version number) and 17(version code) and i guess this is for android.but i need to also update the other platforms .
+  striclty dont edit anything now,but plan yourself on doing the update. dont invent anything , just get reference of all the
+  files necessary to make a new updated build and update it. this is what i want to you can also write up the ref files in a md
+  file in @[docs]
+
+To update the game across all platforms in the future, you can simply say:
+
+  │ "Update game to version 0.0.17 and version code 17"
+  │ (or: "Bump version to 0.0.18, versionCode 18 across all platforms")
+  ──────
+  ### If you also want builds generated immediately:
+
+  You can specify the target platform(s) in the same command:
+
+  • For Android Release:
+  │ "Update to version 0.0.17 (versionCode 17) and build Android AAB"
+
+  • For Windows / Microsoft Store:
+  │ "Update to version 0.0.17 (versionCode 17) and build Windows MSIX"
+
+  • For Web / Netlify:
+  │ "Update to version 0.0.17 and build Web"
+
+  • For Everything:
+  │ "Update to version 0.0.17 (versionCode 17) and build all platforms"

@@ -6,6 +6,7 @@
 import { Capacitor } from '@capacitor/core';
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import { isAdsRemoved, setAdsRemoved } from '../utils/storage.js';
+import { PlatformService } from './platformService.js';
 
 export const IAP_PRODUCT_IDS = {
   REMOVE_ADS: 'rotatle_remove_ads',
@@ -13,7 +14,7 @@ export const IAP_PRODUCT_IDS = {
 
 class InAppPurchaseManager {
   constructor() {
-    this.isNative = Capacitor.isNativePlatform();
+    this.isNative = PlatformService.hasIAP;
     this.billingSupported = false;
     this.initialized = false;
   }

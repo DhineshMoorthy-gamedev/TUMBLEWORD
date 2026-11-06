@@ -1,3 +1,4 @@
+import { PlatformService } from './platform/platformService.js';
 import { GameState } from './core/GameState.js';
 import { GameEngine } from './core/GameEngine.js';
 import { BoardRenderer } from './rendering/BoardRenderer.js';
@@ -21,7 +22,6 @@ import {
   buildEndlessTimelineSnapshots
 } from './simulation/endlessSimulator.js';
 import { getEndlessWalls } from './data/endlessWalls.js';
-import { TutorialManager } from './tutorial/tutorialManager.js';
 import { Level1TourController } from './tutorial/level1Tour.js';
 import { notificationManager } from './platform/notificationManager.js';
 import { appUpdateManager } from './platform/appUpdateManager.js';
@@ -40,6 +40,11 @@ import {
   loadHintCount,
   consumeHint,
   addHints,
+  startHintRechargeTimer,
+  getHintRechargeTarget,
+  clearHintRechargeTimer,
+  getHintRechargeRemainingMs,
+  formatRechargeTime,
   updateAchievementStat
 } from './utils/storage.js';
 
@@ -175,7 +180,6 @@ const elements = {
   themeIcon: $('themeIcon'),
   themeLabel: $('themeLabel'),
   homeAchievementsBtn: $('homeAchievementsBtn'),
-  homeHelpBtn: $('homeHelpBtn'),
   homeSettingsBtn: $('homeSettingsBtn'),
   homeFullscreenBtn: $('homeFullscreenBtn'),
   achievementsModal: $('achievementsModal'),
@@ -194,8 +198,10 @@ const elements = {
   settingsThemeObsidianBtn: $('settingsThemeObsidianBtn'),
   settingsThemeVellumBtn: $('settingsThemeVellumBtn'),
   settingsSoundToggle: $('settingsSoundToggle'),
+  settingsVibrateRow: $('settingsVibrateRow'),
   settingsVibrateToggle: $('settingsVibrateToggle'),
   vibrateUnavailableBadge: $('vibrateUnavailableBadge'),
+  settingsReminderRow: $('settingsReminderRow'),
   settingsReminderToggle: $('settingsReminderToggle'),
   settingsRemoveAdsRow: $('settingsRemoveAdsRow'),
   settingsRemoveAdsBtn: $('settingsRemoveAdsBtn'),
@@ -226,17 +232,6 @@ const elements = {
   levelTourDesc: $('levelTourDesc'),
   levelTourNextBtn: $('levelTourNextBtn'),
   levelTourSkipBtn: $('levelTourSkipBtn'),
-  tutorialWelcomeModal: $('tutorialWelcomeModal'),
-  tutorialOutroModal: $('tutorialOutroModal'),
-  tutorialPromptBanner: $('tutorialPromptBanner'),
-  tutorialStepIndicator: $('tutorialStepIndicator'),
-  tutorialPromptText: $('tutorialPromptText'),
-  startTutorialBtn: $('startTutorialBtn'),
-  closeTutorialWelcomeBtn: $('closeTutorialWelcomeBtn'),
-  exitTutorialBtn: $('exitTutorialBtn'),
-  outroPlayLevel1Btn: $('outroPlayLevel1Btn'),
-  outroPlayEndlessBtn: $('outroPlayEndlessBtn'),
-  outroHomeBtn: $('outroHomeBtn'),
   appUpdateModal: $('appUpdateModal'),
   closeUpdateModalBtn: $('closeUpdateModalBtn'),
   startUpdateBtn: $('startUpdateBtn'),
@@ -253,6 +248,10 @@ const elements = {
   claimRewardCountVal: $('claimRewardCountVal'),
   claimUseNowBtn: $('claimUseNowBtn'),
   claimSaveLaterBtn: $('claimSaveLaterBtn'),
+  hintRechargeModal: $('hintRechargeModal'),
+  closeHintRechargeModalBtn: $('closeHintRechargeModalBtn'),
+  dismissHintRechargeBtn: $('dismissHintRechargeBtn'),
+  hintRechargeCountdownVal: $('hintRechargeCountdownVal'),
   exitConfirmModal: $('exitConfirmModal'),
   exitConfirmTitle: $('exitConfirmTitle'),
   exitConfirmDesc: $('exitConfirmDesc'),
@@ -260,6 +259,31 @@ const elements = {
   exitResumeBtn: $('exitResumeBtn'),
   exitLeaveBtn: $('exitLeaveBtn')
 };
+
+// Suppress native browser hover tooltips globally across all platforms
+function stripAllTooltips(root = document) {
+  if (root && root.querySelectorAll) {
+    root.querySelectorAll('[title]').forEach(el => el.removeAttribute('title'));
+  }
+}
+stripAllTooltips();
+if (typeof MutationObserver !== 'undefined') {
+  new MutationObserver(mutations => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && m.attributeName === 'title' && m.target?.hasAttribute?.('title')) {
+        m.target.removeAttribute('title');
+      }
+      if (m.addedNodes) {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType === 1) {
+            if (node.hasAttribute?.('title')) node.removeAttribute('title');
+            stripAllTooltips(node);
+          }
+        });
+      }
+    }
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['title'], subtree: true, childList: true });
+}
 
 // Calendar Viewing State
 let calViewYear = new Date().getFullYear();
@@ -299,12 +323,37 @@ const nativeBridge = new NativeBridge({
 });
 
 // Settings Screen Open / Close helpers
+function applyPlatformFeatureGating() {
+  if (PlatformService.isStandalone) {
+    const adsRow = document.getElementById('settingsRemoveAdsRow');
+    if (adsRow) adsRow.hidden = true;
+  }
+  if (!PlatformService.hasHaptics && elements.settingsVibrateRow) {
+    elements.settingsVibrateRow.hidden = true;
+  }
+  if (!PlatformService.hasDailyReminders && elements.settingsReminderRow) {
+    elements.settingsReminderRow.hidden = true;
+  }
+  if (!PlatformService.hasRateApp && elements.rateAppBtn) {
+    elements.rateAppBtn.hidden = true;
+  }
+  if (!PlatformService.hasCheckForUpdates && elements.checkForUpdatesBtn) {
+    elements.checkForUpdatesBtn.hidden = true;
+  }
+  if (!PlatformService.hasMoreGames && elements.moreGamesBtn) {
+    elements.moreGamesBtn.hidden = true;
+  }
+}
+
 function openSettingsScreen() {
   uiManager.showSettingsScreen(state.screen);
   updateThemeUI();
   updateSoundButtons();
-  checkVibrateSupport();
-  if (elements.settingsReminderToggle) {
+  applyPlatformFeatureGating();
+  if (PlatformService.hasHaptics) {
+    checkVibrateSupport();
+  }
+  if (PlatformService.hasDailyReminders && elements.settingsReminderToggle) {
     elements.settingsReminderToggle.checked = loadReminderEnabled();
   }
 }
@@ -327,6 +376,7 @@ function checkVibrateSupport() {
 }
 
 async function initDailyReminders() {
+  if (!PlatformService.hasDailyReminders) return;
   await notificationManager.init();
   const isEnabled = loadReminderEnabled();
   if (elements.settingsReminderToggle) {
@@ -343,8 +393,12 @@ async function initDailyReminders() {
 // Initialize Theme, UI, Vibration & Daily Reminders
 initTheme(nativeBridge);
 updateThemeUI();
-checkVibrateSupport();
-initDailyReminders();
+if (PlatformService.hasHaptics) {
+  checkVibrateSupport();
+}
+if (PlatformService.hasDailyReminders) {
+  initDailyReminders();
+}
 
 function updateThemeUI(theme) {
   const current = theme || getSavedTheme();
@@ -467,16 +521,6 @@ engine.setOnStateChange(st => {
   }
 });
 
-const tutorialManager = new TutorialManager({
-  engine,
-  state,
-  uiManager,
-  sound: soundFX,
-  nativeBridge,
-  elements
-});
-engine.setTutorialManager(tutorialManager);
-
 const level1Tour = new Level1TourController({
   uiManager,
   state,
@@ -540,9 +584,6 @@ function loadLevelTimeline(level) {
 }
 
 function startLevel(levelOrId) {
-  if (tutorialManager && tutorialManager.active) {
-    tutorialManager.exitTutorial();
-  }
   if (level1Tour && level1Tour.active) {
     level1Tour.finishTour();
   }
@@ -571,9 +612,6 @@ function startLevel(levelOrId) {
 }
 
 function goToHomeScreen() {
-  if (tutorialManager && tutorialManager.active) {
-    tutorialManager.exitTutorial();
-  }
   if (level1Tour && level1Tour.active) {
     level1Tour.finishTour();
   }
@@ -675,12 +713,6 @@ if (elements.homeFullscreenBtn) elements.homeFullscreenBtn.addEventListener('cli
 
 function requestExitToHome() {
   if (state.screen !== 'game') {
-    goToHomeScreen();
-    return;
-  }
-
-  if (state.isTutorial || (state.level && state.level.isTutorial) || (tutorialManager && tutorialManager.active)) {
-    tutorialManager.exitTutorial();
     goToHomeScreen();
     return;
   }
@@ -954,21 +986,6 @@ if (elements.outOfMovesHomeBtn) {
   });
 }
 
-if (elements.homeHelpBtn) {
-  elements.homeHelpBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    tutorialManager.openWelcomeModal();
-  });
-}
-
-if (elements.startTutorialBtn) {
-  elements.startTutorialBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    TutorialManager.markIntroSeen();
-    tutorialManager.startTutorial();
-  });
-}
-
 if (elements.levelTourNextBtn) {
   elements.levelTourNextBtn.addEventListener('click', () => {
     level1Tour.nextStep();
@@ -978,48 +995,6 @@ if (elements.levelTourNextBtn) {
 if (elements.levelTourSkipBtn) {
   elements.levelTourSkipBtn.addEventListener('click', () => {
     level1Tour.skipTour();
-  });
-}
-
-if (elements.closeTutorialWelcomeBtn) {
-  elements.closeTutorialWelcomeBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    TutorialManager.markIntroSeen();
-    uiManager.closeModal('tutorialWelcomeModal');
-  });
-}
-
-if (elements.exitTutorialBtn) {
-  elements.exitTutorialBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    tutorialManager.exitTutorial();
-    goToHomeScreen();
-  });
-}
-
-if (elements.outroPlayLevel1Btn) {
-  elements.outroPlayLevel1Btn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    uiManager.closeAllModals();
-    startLevel(1);
-  });
-}
-
-if (elements.outroPlayEndlessBtn) {
-  elements.outroPlayEndlessBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    uiManager.closeAllModals();
-    state.screen = 'game';
-    const seed = Math.floor(1000 + Math.random() * 90000);
-    engine.startEndlessMode(seed);
-  });
-}
-
-if (elements.outroHomeBtn) {
-  elements.outroHomeBtn.addEventListener('click', () => {
-    if (soundFX) soundFX.playClick();
-    uiManager.closeAllModals();
-    goToHomeScreen();
   });
 }
 
@@ -1150,7 +1125,7 @@ if (elements.rateAppBtn) {
       if (nativeBridge) {
         await nativeBridge.requestInAppReview();
       } else {
-        window.open('https://play.google.com/store/apps/details?id=com.olaidigitalstudios.rotatle', '_blank');
+        PlatformService.openExternalUrl('https://play.google.com/store/apps/details?id=com.olaidigitalstudios.rotatle');
       }
     } catch (e) {
       console.warn('Native in-app review error:', e);
@@ -1165,7 +1140,7 @@ if (elements.rateAppBtn) {
 if (elements.contactSupportBtn) {
   elements.contactSupportBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    window.location.href = 'mailto:olaidigitalstudios@gmail.com?subject=Rotatle%20Support';
+    PlatformService.openExternalUrl('mailto:olaidigitalstudios@gmail.com?subject=Rotatle%20Support');
   });
 }
 
@@ -1179,7 +1154,7 @@ if (elements.privacyPolicyBtn) {
 if (elements.viewOnlinePrivacyBtn) {
   elements.viewOnlinePrivacyBtn.addEventListener('click', () => {
     if (soundFX) soundFX.playClick();
-    window.open('https://sites.google.com/view/rotatle-privacy-policy', '_blank');
+    PlatformService.openExternalUrl('https://sites.google.com/view/rotatle-privacy-policy');
   });
 }
 
@@ -1209,11 +1184,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.16)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.17)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.16)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.17)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);
@@ -1257,7 +1232,6 @@ if (elements.closeUpdateModalBtn) {
     if (soundFX) soundFX.playClick();
     userDismissedUpdateModal = true;
     uiManager.hideAppUpdateModal();
-    checkFirstTimeTutorialIntro();
   });
 }
 
@@ -1266,7 +1240,6 @@ if (elements.dismissUpdateBtn) {
     if (soundFX) soundFX.playClick();
     userDismissedUpdateModal = true;
     uiManager.hideAppUpdateModal();
-    checkFirstTimeTutorialIntro();
   });
 }
 
@@ -1275,11 +1248,7 @@ if (elements.moreGamesBtn) {
     if (soundFX) soundFX.playClick();
     if (nativeBridge) nativeBridge.triggerHaptic('light');
 
-    if (TargetConfig.isPlaystore || Capacitor.isNativePlatform()) {
-      window.open('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios', '_blank');
-    } else {
-      window.open('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios', '_blank');
-    }
+    PlatformService.openExternalUrl('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios');
   });
 }
 
@@ -1438,17 +1407,27 @@ if (!TargetConfig.features.showEditorToggle) {
 
 function refreshHintButtonUI() {
   const isAdFree = inAppPurchaseManager.isAdsRemoved();
-  const count = loadHintCount();
+  let count = loadHintCount();
+  if (PlatformService.isStandalone && !isAdFree && count <= 0) {
+    const remaining = getHintRechargeRemainingMs();
+    if (remaining === 0) {
+      count = loadHintCount();
+      if (count <= 0) {
+        startHintRechargeTimer();
+      }
+    }
+  }
+
   if (hintManager.isGuidanceActive()) {
-    uiManager.setHintGuidanceState(hintManager.secondsRemaining, count, isAdFree);
+    uiManager.setHintGuidanceState(hintManager.secondsRemaining, count, isAdFree, PlatformService.hasAds);
   } else {
-    uiManager.updateHintButton(count, isAdFree);
+    uiManager.updateHintButton(count, isAdFree, PlatformService.hasAds);
   }
 }
 
 function triggerHintGuidance() {
   if (state.screen !== 'game' || state.mode !== 'play' || state.locked) return;
-  if (state.isTutorial || (state.level && state.level.isTutorial) || (tutorialManager && tutorialManager.active)) {
+  if (state.isTutorial || (state.level && state.level.isTutorial)) {
     uiManager.showToast('Hints are disabled in Tutorial mode');
     return;
   }
@@ -1463,13 +1442,25 @@ function triggerHintGuidance() {
 
   if (!isAdFree && availableHints <= 0) {
     if (soundFX) soundFX.playClick();
-    uiManager.showRewardedHintModal();
+    if (PlatformService.hasAds) {
+      uiManager.showRewardedHintModal();
+    } else {
+      let target = getHintRechargeTarget();
+      if (!target || target <= Date.now()) {
+        target = startHintRechargeTimer();
+      }
+      const remainingMs = Math.max(0, target - Date.now());
+      uiManager.showHintRechargeModal(formatRechargeTime(remainingMs, true));
+    }
     return;
   }
 
   // Consume 1 hint if not ad-free
   if (!isAdFree) {
     consumeHint();
+    if (PlatformService.isStandalone && loadHintCount() === 0) {
+      startHintRechargeTimer();
+    }
   }
 
   if (soundFX) soundFX.playClick();
@@ -1479,7 +1470,7 @@ function triggerHintGuidance() {
     state,
     {
       onTick: seconds => {
-        uiManager.setHintGuidanceState(seconds, loadHintCount(), inAppPurchaseManager.isAdsRemoved());
+        uiManager.setHintGuidanceState(seconds, loadHintCount(), inAppPurchaseManager.isAdsRemoved(), PlatformService.hasAds);
       },
       onNextMove: (nextDir, remainingSteps) => {
         if (nextDir !== null && nextDir !== undefined) {
@@ -1514,13 +1505,7 @@ function triggerHintGuidance() {
   }
 }
 
-if (elements.hintBtn) {
-  elements.hintBtn.addEventListener('click', () => {
-    triggerHintGuidance();
-  });
-}
-
-// Rewarded Hint Modal Button Handlers
+// Rewarded Hint Modal Button Handlers (Android)
 if (elements.watchHintAdBtn) {
   elements.watchHintAdBtn.addEventListener('click', async () => {
     if (soundFX) soundFX.playClick();
@@ -1553,6 +1538,46 @@ if (elements.dismissRewardedHintBtn) {
     if (soundFX) soundFX.playClick();
     uiManager.hideRewardedHintModal();
   });
+}
+
+// Hint Recharge Modal Handlers (Web & Desktop)
+if (elements.closeHintRechargeModalBtn) {
+  elements.closeHintRechargeModalBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideHintRechargeModal();
+  });
+}
+
+if (elements.dismissHintRechargeBtn) {
+  elements.dismissHintRechargeBtn.addEventListener('click', () => {
+    if (soundFX) soundFX.playClick();
+    uiManager.hideHintRechargeModal();
+  });
+}
+
+// Active background countdown ticker for Web & Desktop hint recharge
+if (PlatformService.isStandalone) {
+  setInterval(() => {
+    if (inAppPurchaseManager.isAdsRemoved()) return;
+    const target = getHintRechargeTarget();
+    if (target) {
+      const now = Date.now();
+      if (now >= target) {
+        // Target time reached! Apply recharge
+        clearHintRechargeTimer();
+        addHints(1);
+        refreshHintButtonUI();
+        uiManager.hideHintRechargeModal();
+        uiManager.showToast('Free hint recharged! 💡');
+      } else {
+        const remainingMs = target - now;
+        const modal = document.getElementById('hintRechargeModal');
+        if (modal && !modal.hidden) {
+          uiManager.updateHintRechargeCountdown(formatRechargeTime(remainingMs, true));
+        }
+      }
+    }
+  }, 1000);
 }
 
 // Claim Reward Modal Actions
@@ -1808,17 +1833,6 @@ const startupUpdatePromise = appUpdateManager.checkForUpdate().catch(err => {
   return { available: false };
 });
 
-function checkFirstTimeTutorialIntro() {
-  if (TutorialManager.isFirstTimeUser({
-    completedLevels: state.completedLevels,
-    unlockedLevel: state.unlockedLevel,
-    bestStreak: state.bestStreak
-  })) {
-    TutorialManager.markIntroSeen();
-    tutorialManager.openWelcomeModal();
-  }
-}
-
 // Run Studio Intro splash screen and automatically prompt update modal when available
 runStudioIntro(async () => {
   try {
@@ -1835,15 +1849,39 @@ runStudioIntro(async () => {
   } catch (err) {
     console.warn('Startup update prompt error:', err);
   }
-
-  // Automatically display How to Play / Tutorial intro popup for first-time newly installed users
-  checkFirstTimeTutorialIntro();
 });
 
 // Boot into Home Screen with 3-tier Grid Leap Hub Layout
 goToHomeScreen();
 refreshHintButtonUI();
 
+
+// -- Platform-awareness: standalone (web/desktop) adjustments --------------
+applyPlatformFeatureGating();
+
+// Desktop save backup � debounced mirror of all rotatle_* keys to %APPDATA%
+if (PlatformService.hasDesktopStorage) {
+  const _origSetItem = window.localStorage.setItem.bind(window.localStorage);
+  window.localStorage.setItem = function (key, value) {
+    _origSetItem(key, value);
+    if (key && key.startsWith('rotatle_')) {
+      clearTimeout(window._desktopSaveTimer);
+      window._desktopSaveTimer = setTimeout(() => {
+        try {
+          const snapshot = {};
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('rotatle_')) snapshot[k] = localStorage.getItem(k);
+          }
+          PlatformService.saveDesktopBackup(JSON.stringify(snapshot));
+        } catch (e) {
+          console.warn('[Desktop] Save snapshot error:', e);
+        }
+      }, 1500);
+    }
+  };
+}
+// -----------------------------------------------------------------------------
 // Initialize In-App Purchases & sync button state
 inAppPurchaseManager.init().then(() => {
   const isAdFree = inAppPurchaseManager.isAdsRemoved();

@@ -57,15 +57,12 @@
             <span class="logo-text">ROTATLE</span>
           </div>
           <div class="topbar-right">
-            <button class="nav-icon-btn" id="homeAchievementsBtn" type="button" aria-label="Achievements & Stats" title="Achievements">
+            <button class="nav-icon-btn" id="homeAchievementsBtn" type="button" aria-label="Achievements & Stats">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M4 22h16 M10 14.66V17c0 .55-.45 1-1 1H7 M14 14.66V17c0 .55.45 1 1 1h2 M18 2H6v7a6 6 0 0 0 12 0V2z"/>
               </svg>
             </button>
-            <button class="nav-icon-btn" id="homeHelpBtn" type="button" aria-label="How to Play" title="How to Play / Rules">
-              ?
-            </button>
-            <button class="nav-icon-btn" id="homeSettingsBtn" type="button" aria-label="Settings" title="Settings">
+            <button class="nav-icon-btn" id="homeSettingsBtn" type="button" aria-label="Settings">
               ⚙
             </button>
           </div>
@@ -87,7 +84,7 @@
                   <span>0 STREAK</span>
                 </span>
               </div>
-              <button class="daily-cal-trigger-btn" id="dailyCalendarBtn" type="button" aria-label="Calendar Archive" title="Browse Past Days">
+              <button class="daily-cal-trigger-btn" id="dailyCalendarBtn" type="button" aria-label="Calendar Archive">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -147,7 +144,7 @@
         <!-- Main Campaign Launch Card (Center Hero) -->
         <div class="campaign-hero-section">
           <div class="campaign-hero-card" id="campaignHeroCard">
-            <button class="campaign-level-select-btn" id="campaignLevelSelectBtn" type="button" aria-label="Campaign Level Selector" title="Select Campaign Level">
+            <button class="campaign-level-select-btn" id="campaignLevelSelectBtn" type="button" aria-label="Campaign Level Selector">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
                 <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
@@ -190,7 +187,7 @@
       <header class="game-topbar">
         <div class="topbar-inner">
           <div class="game-topbar-left">
-            <button class="nav-icon-btn" id="backToLevelsBtn" type="button" title="Back to Home Hub" aria-label="Back to Home">
+            <button class="nav-icon-btn" id="backToLevelsBtn" type="button" aria-label="Back to Home">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
@@ -203,7 +200,7 @@
             </div>
           </div>
           <div class="game-topbar-right">
-            <div class="empty-cells-badge" id="emptyCellsBadge" title="Available Empty / Total Floor Cells">
+            <div class="empty-cells-badge" id="emptyCellsBadge">
               <span class="empty-badge-icon" aria-hidden="true">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
@@ -215,7 +212,7 @@
               <span class="empty-badge-label">EMPTY</span>
               <b class="empty-badge-count" id="emptyCellsCount">0/0</b>
             </div>
-            <button class="nav-icon-btn" id="fullscreenBtn" type="button" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">⛶</button>
+            <button class="nav-icon-btn" id="fullscreenBtn" type="button" aria-label="Toggle Fullscreen">⛶</button>
           </div>
         </div>
       </header>
@@ -262,13 +259,6 @@
           </div>
         </div>
 
-        <!-- INTERACTIVE TUTORIAL LIVE NOTIFICATION DISPLAY -->
-        <div class="tutorial-prompt-banner" id="tutorialPromptBanner" hidden>
-          <span class="tutorial-prompt-badge" id="tutorialStepIndicator">1/3</span>
-          <p class="tutorial-prompt-text" id="tutorialPromptText">
-            Tap <b class="action-highlight">Turn Left ↺</b> to rotate gravity and slide letters!
-          </p>
-        </div>
 
         <!-- HERO STAGE & ROTATING BOARD -->
         <div class="stage" id="stage">
@@ -298,7 +288,7 @@
 
         <!-- SECONDARY ACTION BAR (UNDO, HINT, RESTART) -->
         <div class="game-actions-row">
-          <button class="action-btn" id="undo" type="button" title="Undo Move (Z)">
+          <button class="action-btn" id="undo" type="button">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
@@ -306,7 +296,7 @@
             <span>Undo</span>
           </button>
 
-          <button class="action-btn action-hint-btn" id="hintBtn" type="button" title="Get Hint (H)">
+          <button class="action-btn action-hint-btn" id="hintBtn" type="button">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18h6"></path>
               <path d="M10 22h4"></path>
@@ -316,7 +306,7 @@
             <span class="hint-count-badge" id="hintCountBadge">3</span>
           </button>
 
-          <button class="action-btn" id="restart" type="button" title="Restart Level (R)">
+          <button class="action-btn" id="restart" type="button">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -339,11 +329,11 @@
             </div>
           </div>
           <div class="solver-controls">
-            <button class="solver-btn icon-btn" id="solveStart" type="button" title="Go to Start">⏮</button>
-            <button class="solver-btn icon-btn" id="solvePrev" type="button" title="Prev Move">◀</button>
+            <button class="solver-btn icon-btn" id="solveStart" type="button">⏮</button>
+            <button class="solver-btn icon-btn" id="solvePrev" type="button">◀</button>
             <button class="solver-btn auto" id="solvePlay" type="button">▶ Play</button>
-            <button class="solver-btn icon-btn" id="solveNext" type="button" title="Next Move">▶</button>
-            <button class="solver-btn icon-btn" id="solveEnd" type="button" title="Go to Finish">⏭</button>
+            <button class="solver-btn icon-btn" id="solveNext" type="button">▶</button>
+            <button class="solver-btn icon-btn" id="solveEnd" type="button">⏭</button>
           </div>
         </div>
 
@@ -360,7 +350,7 @@
             </div>
             <button class="benchmark-btn" id="runSingleSeedBtn" type="button">⚡ Test Seed</button>
             <button class="benchmark-btn secondary" id="runBatchSeedsBtn" type="button">📊 Batch 1-25</button>
-            <button class="benchmark-btn victory-preview-btn" id="previewEndlessVictoryBtn" type="button" title="Preview Endless Victory Screen">🏆 Victory Screen</button>
+            <button class="benchmark-btn victory-preview-btn" id="previewEndlessVictoryBtn" type="button">🏆 Victory Screen</button>
           </div>
           <div class="benchmark-results" id="benchmarkResults">
             <div class="benchmark-stat-row">
@@ -414,7 +404,7 @@
     <div class="modal-card achievements-showcase-card">
       <!-- 1. HERO SHOWCASE HEADER (TOP CENTER) -->
       <div class="achievements-hero-header">
-        <button class="modal-close-btn achievements-close-btn" data-close-modal type="button" aria-label="Close Achievements" title="Close (Esc)">
+        <button class="modal-close-btn achievements-close-btn" data-close-modal type="button" aria-label="Close Achievements">
           ✕
           <span class="achievements-esc-badge">ESC</span>
         </button>
@@ -454,42 +444,8 @@
     </div>
   </div>
 
-  <!-- 2. INTERACTIVE TUTORIAL WELCOME MODAL -->
-  <div class="modal-overlay" id="tutorialWelcomeModal" hidden>
-    <div class="modal-card tutorial-modal-card">
-      <div class="modal-header">
-        <h3>How to Play</h3>
-        <button class="modal-close-btn" data-close-modal id="closeTutorialWelcomeBtn" type="button" aria-label="Close modal">✕</button>
-      </div>
-      <div class="modal-body tutorial-modal-body">
-        <p class="tutorial-simple-sub">Rotate the board to shift gravity, slide falling letters, and bond words together.</p>
-        <div class="tutorial-actions-row">
-          <button class="turn next tutorial-start-btn" id="startTutorialBtn" type="button">
-            Start Interactive Tutorial
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- 3. INTERACTIVE TUTORIAL OUTRO MODAL -->
-  <div class="modal-overlay" id="tutorialOutroModal" hidden>
-    <div class="modal-card tutorial-outro-card">
-      <div class="modal-header tutorial-outro-header">
-        <h3>Tutorial Complete</h3>
-      </div>
-      <div class="modal-body tutorial-modal-body">
-        <p class="tutorial-simple-sub">You have mastered the core gravity mechanics and are ready to play.</p>
-        <div class="tutorial-outro-actions">
-          <button class="turn next outro-play-btn" id="outroHomeBtn" type="button">
-            Home Hub
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-    <!-- ======================================================== -->
+  <!-- ======================================================== -->
     <!-- SCREEN 3: FULL-SCREEN SETTINGS & SUBVIEWS                 -->
     <!-- ======================================================== -->
     <section class="settings-screen" id="settingsScreen" hidden>
@@ -504,7 +460,7 @@
           </div>
           <h2 class="settings-title" id="settingsTitle">SETTINGS</h2>
           <div class="settings-topbar-right">
-            <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="Close Settings" title="Close">
+            <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="Close Settings">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -573,7 +529,7 @@
                 </label>
               </div>
 
-              <div class="settings-row">
+              <div class="settings-row" id="settingsVibrateRow">
                 <div class="settings-row-label">
                   <span class="settings-row-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -592,7 +548,7 @@
                 </label>
               </div>
 
-              <div class="settings-row">
+              <div class="settings-row" id="settingsReminderRow">
                 <div class="settings-row-label">
                   <span class="settings-row-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -717,7 +673,7 @@
 
           <!-- FOOTER NOTE -->
           <div class="settings-footer">
-            ROTATLE • v0.0.16 • OLAI DIGITAL STUDIOS
+            ROTATLE • v0.0.17 • OLAI DIGITAL STUDIOS
           </div>
         </div>
 
@@ -842,7 +798,7 @@
                   <img src="./app_icon_512.png" alt="ROTATLE App Icon" width="80" height="80">
                 </div>
                 <h1 class="about-app-name">ROTATLE</h1>
-                <div class="about-version-badge">v0.0.16</div>
+                <div class="about-version-badge">v0.0.17</div>
               </div>
 
               <!-- 2. DEVELOPER CREDITS (Clean Centered Hierarchy) -->
@@ -955,40 +911,32 @@
         <span class="daily-emblem-icon">🏆</span>
       </div>
 
-      <h2 id="victoryTitle">Level Completed!</h2>
-      <p class="victory-sub" id="victorySubtitle">All words spelled successfully!</p>
-      
-      <!-- 3. CAMPAIGN 3-STAT BOXES -->
-      <div class="victory-stats" id="victoryCampaignStats">
-        <div class="stat-box"><span>Difficulty</span><b id="victoryScore">Score: 120</b></div>
-        <div class="stat-box"><span>Your Moves</span><b id="victoryMoves">0</b></div>
-        <div class="stat-box"><span>Optimal Benchmark</span><b id="victoryOptimal">9</b></div>
-      </div>
+      <!-- 3. TITLE -->
+      <h2 id="victoryTitle">Level Cleared!</h2>
 
-      <!-- 4. DAILY 2-STAT CARDS -->
-      <div class="victory-daily-stats-row" id="victoryDailyStats" style="display:none;">
-        <div class="stat-box daily-stat-box">
-          <span>MOVES TAKEN</span>
-          <b id="victoryDailyMoves">25</b>
+      <!-- 6. DAILY STATS STRIP -->
+      <div class="victory-stats-panel daily" id="victoryDailyStats" style="display:none;">
+        <div class="stat-box victory-stat-item highlight">
+          <span class="victory-stat-label">MOVES</span>
+          <b class="victory-stat-value" id="victoryDailyMoves">25</b>
         </div>
-        <div class="stat-box daily-stat-box">
-          <span>DAILY STREAK</span>
-          <b id="victoryDailyStreak">🔥 7 Days</b>
+        <div class="victory-stat-divider"></div>
+        <div class="stat-box victory-stat-item">
+          <span class="victory-stat-label">STREAK</span>
+          <b class="victory-stat-value" id="victoryDailyStreak">🔥 7 Days</b>
         </div>
       </div>
 
-      <div class="victory-rating-pill" id="victoryRatingPill">⭐⭐⭐ MASTER SCORE</div>
-
-      <!-- 5. DAILY DATE NAVIGATION BAR (PREV / CALENDAR / NEXT) -->
+      <!-- 7. DAILY DATE NAVIGATION BAR (PREV / CALENDAR / NEXT) -->
       <div class="victory-daily-nav" id="victoryDailyNav" style="display:none;">
-        <button class="daily-nav-btn" id="victoryDailyPrevBtn" type="button" title="Previous Day Puzzle">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="daily-nav-btn" id="victoryDailyPrevBtn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
-          <span>Prev Day</span>
+          <span>Prev</span>
         </button>
-        <button class="daily-nav-btn cal-btn" id="victoryDailyCalBtn" type="button" title="Open Calendar Archive">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="daily-nav-btn cal-btn" id="victoryDailyCalBtn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
             <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -996,32 +944,32 @@
           </svg>
           <span>Calendar</span>
         </button>
-        <button class="daily-nav-btn" id="victoryDailyNextBtn" type="button" title="Next Day Puzzle">
-          <span>Next Day</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="daily-nav-btn" id="victoryDailyNextBtn" type="button">
+          <span>Next</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
       </div>
 
-      <!-- 6. CAMPAIGN ACTION BUTTONS -->
+      <!-- 8. CAMPAIGN ACTION BUTTONS -->
       <div class="victory-actions" id="victoryCampaignActions">
         <button class="turn next victory-btn-primary" id="nextLevelBtn" type="button">
-          Next Level
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
+          <span>Next Level</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
         <div class="victory-btn-row">
           <button class="victory-btn-secondary" id="replayLevelBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
             <span>Replay</span>
           </button>
           <button class="victory-btn-secondary" id="victoryHomeBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
@@ -1030,18 +978,18 @@
         </div>
       </div>
 
-      <!-- 7. DAILY ACTION BUTTONS -->
+      <!-- 9. DAILY ACTION BUTTONS -->
       <div class="victory-actions" id="victoryDailyActions" style="display:none;">
         <button class="turn next victory-btn-primary" id="victoryDailyHomeBtn" type="button">
-          Home
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;">
+          <span>Back to Home</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
         </button>
         <div class="victory-btn-row">
           <button class="victory-btn-secondary" id="victoryDailyReplayBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
@@ -1203,6 +1151,46 @@
     </div>
   </div>
 
+  <!-- HINT RECHARGE MODAL (WEB & DESKTOP) -->
+  <div class="modal-overlay" id="hintRechargeModal" hidden>
+    <div class="modal-card hint-recharge-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#38BDF8;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <h3>Hint Recharging</h3>
+        </div>
+        <button class="modal-close-btn" id="closeHintRechargeModalBtn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body hint-recharge-body">
+        <div class="hint-recharge-banner">
+          <div class="hint-recharge-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="hint-recharge-text">
+            <b>Next Free Hint in:</b>
+            <div class="hint-recharge-timer-display" id="hintRechargeCountdownVal">04:00:00</div>
+          </div>
+        </div>
+        <p class="hint-recharge-note">
+          You're out of hints! On this platform, a free hint recharges automatically every 4 hours.
+        </p>
+      </div>
+
+      <div class="update-actions">
+        <button class="update-btn-primary" id="dismissHintRechargeBtn" type="button">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- CLAIM REWARD / HINT UNLOCKED MODAL -->
   <div class="modal-overlay" id="claimRewardModal" hidden>
     <div class="modal-card claim-reward-card">
@@ -1312,7 +1300,7 @@
           </div>
           <span class="campaign-levels-summary-badge" id="campaignLevelsSummaryBadge">★ 0 / 300 Stars • 0 / 100 Cleared</span>
         </div>
-        <button class="modal-close-btn" data-close-modal type="button" aria-label="Close Levels" title="Close (Esc)">✕</button>
+        <button class="modal-close-btn" data-close-modal type="button" aria-label="Close Levels">✕</button>
       </div>
 
       <!-- Tier Navigation Tabs Bar -->

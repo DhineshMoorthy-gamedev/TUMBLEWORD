@@ -165,7 +165,7 @@ export class UIManager {
           <span class="modal-level-num">${numStr}</span>
           ${isUnlocked ? starsHtml : '<span class="modal-level-lock-badge">🔒 Locked</span>'}
         </div>
-        <div class="modal-level-title" title="${lvl.name}">${lvl.name}</div>
+        <div class="modal-level-title">${lvl.name}</div>
         <div class="modal-level-meta">
           <span>${lvl.words.length} Words</span>
           <span class="modal-level-grid-tag">${lvl.n}×${lvl.n}</span>
@@ -465,7 +465,7 @@ export class UIManager {
       // Right Column: Checkmark or Progress Pill
       let statusHtml = '';
       if (ach.isUnlocked) {
-        statusHtml = `<div class="ach-unlocked-badge" title="Unlocked">✓</div>`;
+        statusHtml = `<div class="ach-unlocked-badge">✓</div>`;
       } else {
         const unitLabel = ach.target > 1 ? ` ${ach.unit}` : '';
         statusHtml = `<div class="ach-progress-pill">${ach.currentProgress} / ${ach.target}${unitLabel}</div>`;
@@ -511,7 +511,11 @@ export class UIManager {
   openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-      this.closeAllModals();
+      if (modal._closeTimeout) {
+        clearTimeout(modal._closeTimeout);
+        modal._closeTimeout = null;
+      }
+      this.closeAllModals(modalId);
       modal.classList.remove('is-closing');
       modal.hidden = false;
     }
@@ -520,21 +524,38 @@ export class UIManager {
   closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal || modal.hidden) return;
+    if (modal._closeTimeout) {
+      clearTimeout(modal._closeTimeout);
+      modal._closeTimeout = null;
+    }
     modal.classList.add('is-closing');
-    setTimeout(() => {
+    modal._closeTimeout = setTimeout(() => {
       modal.hidden = true;
       modal.classList.remove('is-closing');
+      modal._closeTimeout = null;
     }, 150);
   }
 
-  closeAllModals() {
+  closeAllModals(exceptId = null) {
     const modals = document.querySelectorAll('.modal-overlay:not(#outOfMovesModal):not(#victoryOverlay)');
     modals.forEach(m => {
+      if (exceptId && m.id === exceptId) {
+        if (m._closeTimeout) {
+          clearTimeout(m._closeTimeout);
+          m._closeTimeout = null;
+        }
+        return;
+      }
       if (!m.hidden) {
+        if (m._closeTimeout) {
+          clearTimeout(m._closeTimeout);
+          m._closeTimeout = null;
+        }
         m.classList.add('is-closing');
-        setTimeout(() => {
+        m._closeTimeout = setTimeout(() => {
           m.hidden = true;
           m.classList.remove('is-closing');
+          m._closeTimeout = null;
         }, 150);
       }
     });
@@ -700,7 +721,6 @@ export class UIManager {
 
     if (this.el.hintBtn) {
       this.el.hintBtn.disabled = isTutorial;
-      this.el.hintBtn.title = isTutorial ? 'Hints disabled in Tutorial' : 'Get Guidance Hint';
     }
   }
 
@@ -809,8 +829,9 @@ export class UIManager {
    * Update hint button badge and label
    * @param {number} count
    * @param {boolean} [isAdFree=false]
+   * @param {boolean} [hasAds=true]
    */
-  updateHintButton(count, isAdFree = false) {
+  updateHintButton(count, isAdFree = false, hasAds = true) {
     if (!this.el.hintBtn) return;
     const badge = document.getElementById('hintCountBadge');
     const label = document.getElementById('hintBtnLabel');
@@ -819,22 +840,26 @@ export class UIManager {
       if (label) label.textContent = 'Hint';
       if (badge) {
         badge.textContent = '∞';
-        badge.classList.remove('reward');
-        badge.title = 'Unlimited hints (Ad-Free)';
+        badge.classList.remove('reward', 'recharge');
       }
     } else if (count > 0) {
       if (label) label.textContent = 'Hint';
       if (badge) {
         badge.textContent = String(count);
-        badge.classList.remove('reward');
-        badge.title = `${count} free hints remaining`;
+        badge.classList.remove('reward', 'recharge');
       }
     } else {
       if (label) label.textContent = 'Hint';
       if (badge) {
-        badge.textContent = '🎬';
-        badge.classList.add('reward');
-        badge.title = 'Watch short video for +1 hint';
+        if (hasAds) {
+          badge.textContent = '🎬';
+          badge.classList.add('reward');
+          badge.classList.remove('recharge');
+        } else {
+          badge.textContent = '⏳';
+          badge.classList.add('recharge');
+          badge.classList.remove('reward');
+        }
       }
     }
   }
@@ -844,8 +869,9 @@ export class UIManager {
    * @param {number} secondsRemaining
    * @param {number} [storedCount=0]
    * @param {boolean} [isAdFree=false]
+   * @param {boolean} [hasAds=true]
    */
-  setHintGuidanceState(secondsRemaining, storedCount = 0, isAdFree = false) {
+  setHintGuidanceState(secondsRemaining, storedCount = 0, isAdFree = false, hasAds = true) {
     if (!this.el.hintBtn) return;
     const badge = document.getElementById('hintCountBadge');
     const label = document.getElementById('hintBtnLabel');
@@ -855,11 +881,11 @@ export class UIManager {
       if (label) label.textContent = `${secondsRemaining}s`;
       if (badge) {
         badge.textContent = '⚡';
-        badge.classList.remove('reward');
+        badge.classList.remove('reward', 'recharge');
       }
     } else {
       this.el.hintBtn.classList.remove('hint-active');
-      this.updateHintButton(storedCount, isAdFree);
+      this.updateHintButton(storedCount, isAdFree, hasAds);
     }
   }
 
@@ -907,6 +933,33 @@ export class UIManager {
    */
   hideRewardedHintModal() {
     this.closeModal('rewardedHintModal');
+  }
+
+  /**
+   * Show hint recharge modal (Web & Desktop)
+   * @param {string} [timeRemainingStr='04:00:00']
+   */
+  showHintRechargeModal(timeRemainingStr = '04:00:00') {
+    this.updateHintRechargeCountdown(timeRemainingStr);
+    this.openModal('hintRechargeModal');
+  }
+
+  /**
+   * Hide hint recharge modal
+   */
+  hideHintRechargeModal() {
+    this.closeModal('hintRechargeModal');
+  }
+
+  /**
+   * Update the displayed countdown string in hint recharge modal
+   * @param {string} timeRemainingStr
+   */
+  updateHintRechargeCountdown(timeRemainingStr) {
+    const el = document.getElementById('hintRechargeCountdownVal');
+    if (el && timeRemainingStr) {
+      el.textContent = timeRemainingStr;
+    }
   }
 
   /**
@@ -1095,7 +1148,6 @@ export class UIManager {
         </svg>
         <span>Ad-Free</span>
       `;
-      this.el.settingsRemoveAdsBtn.title = 'Ad-Free Version Active';
     } else {
       this.el.settingsRemoveAdsBtn.classList.remove('purchased');
       this.el.settingsRemoveAdsBtn.innerHTML = `
@@ -1104,7 +1156,6 @@ export class UIManager {
         </svg>
         <span>Remove</span>
       `;
-      this.el.settingsRemoveAdsBtn.title = 'Remove Ads';
     }
   }
 
@@ -1124,7 +1175,7 @@ export class UIManager {
     // 1. Toggle mode-specific container sections
     if (this.el.victoryStarsRow) this.el.victoryStarsRow.style.display = (isDaily || isEndless) ? 'none' : 'flex';
     if (this.el.victoryDailyEmblem) this.el.victoryDailyEmblem.style.display = isDaily ? 'block' : 'none';
-    if (this.el.victoryCampaignStats) this.el.victoryCampaignStats.style.display = isDaily ? 'none' : 'grid';
+    if (this.el.victoryCampaignStats) this.el.victoryCampaignStats.style.display = 'none';
     if (this.el.victoryDailyStats) this.el.victoryDailyStats.style.display = isDaily ? 'grid' : 'none';
     if (this.el.victoryDailyNav) this.el.victoryDailyNav.style.display = isDaily ? 'flex' : 'none';
     if (this.el.victoryCampaignActions) this.el.victoryCampaignActions.style.display = isDaily ? 'none' : 'flex';
@@ -1152,7 +1203,7 @@ export class UIManager {
 
         if (this.el.victoryTitle) this.el.victoryTitle.textContent = 'Daily Puzzle Cleared! 🏆';
         if (this.el.victorySubtitle) this.el.victorySubtitle.textContent = dateFormatted;
-        if (this.el.victoryDailyMoves) this.el.victoryDailyMoves.textContent = `${moves} Moves`;
+        if (this.el.victoryDailyMoves) this.el.victoryDailyMoves.textContent = String(moves);
         if (this.el.victoryDailyStreak) this.el.victoryDailyStreak.textContent = `🔥 ${streak} Day${streak === 1 ? '' : 's'}`;
 
         if (dailyManager) {
@@ -1164,21 +1215,21 @@ export class UIManager {
       } else {
         if (this.el.victoryTitle) this.el.victoryTitle.textContent = `${level.name} Cleared!`;
         if (this.el.victorySubtitle) this.el.victorySubtitle.textContent = `All ${level.words.length} words spelled on ${level.n}×${level.n} grid!`;
-        if (this.el.victoryScore) this.el.victoryScore.textContent = `Score: ${level.difficultyScore}`;
+        if (this.el.victoryScore) this.el.victoryScore.textContent = String(level.difficultyScore || 100);
         if (this.el.victoryMoves) this.el.victoryMoves.textContent = String(moves);
         const optimal = level.optimalMoves ? level.optimalMoves : 10;
         if (this.el.victoryOptimal) this.el.victoryOptimal.textContent = String(optimal);
         if (this.el.victoryRatingPill) {
           if (earnedStars === 3) {
-            this.el.victoryRatingPill.textContent = '⭐⭐⭐ FLAWLESS / OPTIMAL';
+            this.el.victoryRatingPill.textContent = 'PERFECT SOLVE';
           } else if (earnedStars === 2) {
-            this.el.victoryRatingPill.textContent = '⭐⭐ SKILLED SOLVER';
+            this.el.victoryRatingPill.textContent = 'SKILLED SOLVER';
           } else {
-            this.el.victoryRatingPill.textContent = '⭐ LEVEL CLEARED';
+            this.el.victoryRatingPill.textContent = 'LEVEL CLEARED';
           }
         }
         if (this.el.nextLevelBtn) {
-          this.el.nextLevelBtn.innerHTML = `Next Level <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+          this.el.nextLevelBtn.innerHTML = `<span>Next Level</span> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
         }
       }
     }
