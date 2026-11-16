@@ -85,7 +85,8 @@ export class UIManager {
     if (summaryBadge) {
       let totalStars = 0;
       Object.values(levelStars).forEach(s => { totalStars += (s || 0); });
-      summaryBadge.textContent = `★ ${totalStars} / 300 Stars • ${completedLevels.length} / ${levels.length} Cleared`;
+      const maxStars = levels.length * 3;
+      summaryBadge.textContent = `★ ${totalStars} / ${maxStars} Stars • ${completedLevels.length} / ${levels.length} Cleared`;
     }
 
     // 1. Update Tier Filter Tabs

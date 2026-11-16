@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rotatle-v0.0.17';
+const CACHE_NAME = 'rotatle-v0.0.19';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

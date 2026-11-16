@@ -1,5 +1,5 @@
 /**
- * 25 Handcrafted Local-Only Achievements for ROTATLE
+ * 27 Handcrafted Local-Only Achievements for ROTATLE
  * Categories: campaign, mastery, daily, strategy, time
  */
 
@@ -60,8 +60,18 @@ export const ACHIEVEMENTS = [
     id: 'centurion_master',
     category: 'campaign',
     title: 'Centurion Grid Master',
-    description: 'Clear all 100 handcrafted campaign levels',
+    description: 'Clear the first 100 handcrafted campaign levels',
     target: 100,
+    unit: 'levels',
+    icon: 'zap',
+    evalProgress: (stats) => stats.completedLevelsCount || 0
+  },
+  {
+    id: 'transcendence_master_150',
+    category: 'campaign',
+    title: 'Transcendence Master',
+    description: 'Clear all 150 handcrafted campaign levels',
+    target: 150,
     unit: 'levels',
     icon: 'zap',
     evalProgress: (stats) => stats.completedLevelsCount || 0
@@ -114,8 +124,18 @@ export const ACHIEVEMENTS = [
     id: 'cosmic_master_300',
     category: 'mastery',
     title: 'Cosmic Grand Master',
-    description: 'Earn all 300 stars across the entire campaign',
+    description: 'Earn 300 stars across the campaign',
     target: 300,
+    unit: 'stars',
+    icon: 'star',
+    evalProgress: (stats) => stats.totalStars || 0
+  },
+  {
+    id: 'absolute_perfection_450',
+    category: 'mastery',
+    title: 'Absolute Perfection',
+    description: 'Earn all 450 stars across the entire 150-level campaign',
+    target: 450,
     unit: 'stars',
     icon: 'star',
     evalProgress: (stats) => stats.totalStars || 0
