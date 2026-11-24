@@ -1,7 +1,7 @@
 # Multi-Platform Version Update Reference & Plan
-**Current Version:** `0.0.19`  
-**Current Android Version Code:** `19`  
-**Current MSIX Windows Version:** `0.0.19.0`  
+**Current Version:** `0.0.21`  
+**Current Android Version Code:** `21`  
+**Current MSIX Windows Version:** `0.0.21.0`  
 **Status:** **Updated & Verified across all platforms**  
 **Date:** November 2026  
 **Studio:** OLAI Digital Studios  
@@ -16,19 +16,19 @@ To publish an updated build across all supported targets (**Android / Google Pla
 
 ## 2. Master Reference of Files to Update
 
-| # | Platform / Scope | File Path | Line(s) | Current Value (`0.0.18`) | Target Value (`0.0.19`) | Purpose / Impact |
+| # | Platform / Scope | File Path | Line(s) | Current Value (`0.0.20`) | Target Value (`0.0.21`) | Purpose / Impact |
 |---|---|---|:---:|---|---|---|
-| **1** | **Root Project** | [`package.json`](file:///E:/PROTO/TUMBLEWORD/package.json) | 4 | `"version": "0.0.18"` | `"version": "0.0.19"` | Global Node.js package version |
-| **2** | **Root Lockfile** | [`package-lock.json`](file:///E:/PROTO/TUMBLEWORD/package-lock.json) | 3, 9 | `"version": "0.0.18"` | `"version": "0.0.19"` | Lockfile integrity synchronization |
-| **3** | **Android App** | [`android/app/build.gradle`](file:///E:/PROTO/TUMBLEWORD/android/app/build.gradle) | 10 | `versionCode 18` | `versionCode 19` | Google Play required incremental release integer |
-| **4** | **Android App** | [`android/app/build.gradle`](file:///E:/PROTO/TUMBLEWORD/android/app/build.gradle) | 11 | `versionName "0.0.18"` | `versionName "0.0.19"` | User-facing version string on Android |
-| **5** | **Desktop (Tauri)** | [`src-tauri/tauri.conf.json`](file:///E:/PROTO/TUMBLEWORD/src-tauri/tauri.conf.json) | 4 | `"version": "0.0.18"` | `"version": "0.0.19"` | Tauri bundle & Windows MSIX version manifest |
-| **6** | **Desktop (Rust)** | [`src-tauri/Cargo.toml`](file:///E:/PROTO/TUMBLEWORD/src-tauri/Cargo.toml) | 3 | `version = "0.0.18"` | `version = "0.0.19"` | Rust desktop application package version |
-| **7** | **Web / PWA** | [`public/sw.js`](file:///E:/PROTO/TUMBLEWORD/public/sw.js) | 1 | `'rotatle-v0.0.18'` | `'rotatle-v0.0.19'` | **Critical:** Evicts outdated client cache on browsers |
-| **8** | **In-Game Settings** | [`index.html`](file:///E:/PROTO/TUMBLEWORD/index.html) | 676 | `v0.0.18` | `v0.0.19` | Settings menu bottom branding footer |
-| **9** | **In-Game About** | [`index.html`](file:///E:/PROTO/TUMBLEWORD/index.html) | 801 | `v0.0.18` | `v0.0.19` | About & Credits modal version pill badge |
-| **10** | **App Update Toasts**| [`src/main.js`](file:///E:/PROTO/TUMBLEWORD/src/main.js) | 1187, 1191 | `(v0.0.18)` | `(v0.0.19)` | Feedback toast when user manually checks updates |
-| **11** | **Documentation** | [`docs/Cross-Platform Implementation & Platform Readiness Report.md`](file:///E:/PROTO/TUMBLEWORD/docs/Cross-Platform%20Implementation%20&%20Platform%20Readiness%20Report.md) | 4, 43 | `0.0.18` (code 18) | `0.0.19` (code 19) | Project architecture & readiness documentation |
+| **1** | **Root Project** | [`package.json`](file:///E:/PROTO/TUMBLEWORD/package.json) | 4 | `"version": "0.0.20"` | `"version": "0.0.21"` | Global Node.js package version |
+| **2** | **Root Lockfile** | [`package-lock.json`](file:///E:/PROTO/TUMBLEWORD/package-lock.json) | 3, 9 | `"version": "0.0.20"` | `"version": "0.0.21"` | Lockfile integrity synchronization |
+| **3** | **Android App** | [`android/app/build.gradle`](file:///E:/PROTO/TUMBLEWORD/android/app/build.gradle) | 10 | `versionCode 20` | `versionCode 21` | Google Play required incremental release integer |
+| **4** | **Android App** | [`android/app/build.gradle`](file:///E:/PROTO/TUMBLEWORD/android/app/build.gradle) | 11 | `versionName "0.0.20"` | `versionName "0.0.21"` | User-facing version string on Android |
+| **5** | **Desktop (Tauri)** | [`src-tauri/tauri.conf.json`](file:///E:/PROTO/TUMBLEWORD/src-tauri/tauri.conf.json) | 4 | `"version": "0.0.20"` | `"version": "0.0.21"` | Tauri bundle & Windows MSIX version manifest |
+| **6** | **Desktop (Rust)** | [`src-tauri/Cargo.toml`](file:///E:/PROTO/TUMBLEWORD/src-tauri/Cargo.toml) | 3 | `version = "0.0.20"` | `version = "0.0.21"` | Rust desktop application package version |
+| **7** | **Web / PWA** | [`public/sw.js`](file:///E:/PROTO/TUMBLEWORD/public/sw.js) | 1 | `'rotatle-v0.0.20'` | `'rotatle-v0.0.21'` | **Critical:** Evicts outdated client cache on browsers |
+| **8** | **In-Game Settings** | [`index.html`](file:///E:/PROTO/TUMBLEWORD/index.html) | 676 | `v0.0.20` | `v0.0.21` | Settings menu bottom branding footer |
+| **9** | **In-Game About** | [`index.html`](file:///E:/PROTO/TUMBLEWORD/index.html) | 801 | `v0.0.20` | `v0.0.21` | About & Credits modal version pill badge |
+| **10** | **App Update Toasts**| [`src/main.js`](file:///E:/PROTO/TUMBLEWORD/src/main.js) | 1187, 1191 | `(v0.0.20)` | `(v0.0.21)` | Feedback toast when user manually checks updates |
+| **11** | **Documentation** | [`docs/Cross-Platform Implementation & Platform Readiness Report.md`](file:///E:/PROTO/TUMBLEWORD/docs/Cross-Platform%20Implementation%20&%20Platform%20Readiness%20Report.md) | 4, 43 | `0.0.20` (code 20) | `0.0.21` (code 21) | Project architecture & readiness documentation |
 
 ---
 
@@ -78,5 +78,5 @@ npm run build:itch
 ```bash
 # Build Windows .msixbundle container using updated version
 npm run tauri:msix
-# Output: src-tauri/target/msix/Rotatle_0.0.19.0.msixbundle
+# Output: src-tauri/target/msix/Rotatle_0.0.21.0.msixbundle
 ```

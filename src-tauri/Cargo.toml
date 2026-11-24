@@ -1,6 +1,6 @@
 [package]
 name        = "rotatle"
-version     = "0.0.19"
+version     = "0.0.21"
 description = "Rotatle — A rotating gravity word puzzle game"
 edition     = "2021"
 

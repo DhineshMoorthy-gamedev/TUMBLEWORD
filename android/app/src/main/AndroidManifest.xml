@@ -3,6 +3,14 @@
 
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!-- Mark screen orientation hardware feature as optional so tablets, Chromebooks, Google Play Games on PC, and Android XR can install the app -->
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -38,10 +46,10 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Google AdMob App ID (Testing Sample ID; switch back to production when store release is ready) -->
+        <!-- Google AdMob App ID (Production App ID) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-4890313674539327~7104584458"/>
     </application>
 
     <!-- Permissions -->

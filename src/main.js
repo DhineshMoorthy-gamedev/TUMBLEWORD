@@ -1184,11 +1184,11 @@ if (elements.checkForUpdatesBtn) {
           uiManager.showAppUpdateModal(result.info || {});
         }
       } else {
-        uiManager.showToast('ROTATLE is up to date (v0.0.19)');
+        uiManager.showToast('ROTATLE is up to date (v0.0.21)');
       }
     } catch (e) {
       console.warn('Check for updates error:', e);
-      uiManager.showToast('ROTATLE is up to date (v0.0.19)');
+      uiManager.showToast('ROTATLE is up to date (v0.0.21)');
     } finally {
       setTimeout(() => {
         uiManager.setCheckUpdatesLoading(false);
@@ -1248,7 +1248,7 @@ if (elements.moreGamesBtn) {
     if (soundFX) soundFX.playClick();
     if (nativeBridge) nativeBridge.triggerHaptic('light');
 
-    PlatformService.openExternalUrl('https://play.google.com/store/apps/developer?id=OlaiDigitalStudios');
+    PlatformService.openExternalUrl(PlatformService.moreGamesUrl);
   });
 }
 

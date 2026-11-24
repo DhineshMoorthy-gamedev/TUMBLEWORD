@@ -2533,7 +2533,7 @@ dependencies = [
 
 [[package]]
 name = "rotatle"
-version = "0.0.16"
+version = "0.0.21"
 dependencies = [
  "serde",
  "serde_json",

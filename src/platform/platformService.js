@@ -82,6 +82,9 @@ export const PlatformService = {
   hasCheckForUpdates:   _platform === 'android',
   /** More Games by OLAI link (Desktop and Android only; hidden on Web) */
   hasMoreGames:         _platform === 'android' || _platform === 'desktop',
+  moreGamesUrl:         _platform === 'desktop'
+    ? 'https://apps.microsoft.com/search/publisher?name=OLAI+Digital+Studios'
+    : 'https://play.google.com/store/apps/developer?id=OlaiDigitalStudios',
 
   /**
    * Open an external URL or mailto link using the platform's default browser or handler.
