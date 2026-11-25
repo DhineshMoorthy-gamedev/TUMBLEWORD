@@ -1,6 +1,7 @@
 {
-  "publisher": "CN=OlaiDigitalStudios",
-  "publisherDisplayName": "Olai Digital Studios",
+  "identifier": "OLAIDigitalStudios.Rotatle",
+  "publisher": "CN=25D5884C-ABDD-421C-A804-FA2DDCCF97E3",
+  "publisherDisplayName": "OLAI Digital Studios",
   "capabilities": {
     "general": [
       "internetClient"
